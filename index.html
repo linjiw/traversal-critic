@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The World Model as Judge — Learned Traversal Rewards for Humanoid Navigation</title>
+<meta name="description" content="We turn a video world model into a judge — not a simulator, not a policy — and use it as the reward model for training humanoid navigation in cluttered, occupied indoor spaces.">
+<style>
+:root {
+  color-scheme: light;
+  --surface: #fcfcfb; --page: #f9f9f7;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --line: #e1e0d9; --accent: #2a78d6; --accent-2: #eb6834; --good: #1baf7a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--ink); line-height: 1.55; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+header.hero { background: var(--surface); border-bottom: 1px solid var(--line); padding: 56px 0 40px; text-align: center; }
+h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 10px; }
+.subtitle { font-size: 1.15rem; color: var(--ink-2); max-width: 760px; margin: 0 auto 18px; }
+.badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.badge { display: inline-block; padding: 8px 18px; border-radius: 999px; border: 1.5px solid var(--ink); text-decoration: none; color: var(--ink); font-weight: 600; font-size: 0.95rem; }
+.badge.primary { background: var(--ink); color: #fff; }
+.badge:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+section { padding: 44px 0; }
+section.alt { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+h2 { font-size: 1.5rem; margin: 0 0 6px; }
+.lead { color: var(--ink-2); margin: 0 0 24px; max-width: 820px; }
+figure { margin: 18px 0; }
+figure img { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 760px) { .grid3 { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.card img { width: 100%; display: block; }
+.card .pad { padding: 12px 14px; }
+.card h3 { margin: 0 0 4px; font-size: 1rem; }
+.card p { margin: 0; font-size: 0.88rem; color: var(--ink-2); }
+.tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+.tag.good { background: #e3f6ee; color: #0b6e4a; }
+.tag.mid { background: #fdf1ea; color: #b34a1a; }
+.tag.bad { background: #fdeaea; color: #a32222; }
+.numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 860px) { .numbers { grid-template-columns: repeat(2, 1fr); } }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; }
+.stat .big { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.stat .big .accent { color: var(--accent); }
+.stat .lbl { font-size: 0.85rem; color: var(--ink-2); margin-top: 6px; }
+.story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
+@media (max-width: 760px) { .story { grid-template-columns: 1fr; } }
+.move { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; }
+.move b { display: block; margin-bottom: 4px; }
+.move p { margin: 0; font-size: 0.92rem; color: var(--ink-2); }
+.pitch { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent-2); border-radius: 10px; padding: 18px 22px; font-size: 1.02rem; max-width: 860px; margin: 0 auto; }
+footer { padding: 34px 0 50px; color: var(--muted); font-size: 0.85rem; text-align: center; }
+a { color: var(--accent); }
+.paperbox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px 26px; }
+.paperbox h3 { margin-top: 0; }
+.abstract { font-size: 0.95rem; color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>The World Model as Judge</h1>
+    <p class="subtitle">Learned traversal rewards for humanoid navigation in cluttered, occupied indoor spaces — the video world model scores the robot's behavior at training time, and never deploys.</p>
+    <div class="badges">
+      <a class="badge primary" href="paper/draft.pdf">📄 Paper (draft PDF)</a>
+      <a class="badge" href="https://github.com/linjiw/traversal-critic" id="code-link">💻 Code</a>
+      <a class="badge" href="#approach">🧭 Approach</a>
+      <a class="badge" href="#results">📈 Results</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="pitch">
+      <b>In 30 seconds:</b> Humanoids can walk now — but they still can't cross a cluttered living room with people in it. The blocker isn't balance; it's that nobody can <i>write down the reward</i> for "squeeze through that gap politely, duck under the table, don't crowd the person." So we don't write it — we <b>learn it from a video foundation model</b>. We fine-tune a video-language world model into a <b>traversal critic</b> that watches a rollout clip and scores it 1–5, then use that score as the reward for training a small navigation policy over a frozen whole-body controller. Nothing big deploys on the robot — and the critic's judgment transfers to real robot video.
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="approach">
+  <div class="wrap">
+    <h2>The approach: judge, not simulator, not policy</h2>
+    <p class="lead">Video world models are used as <b>simulators</b> (imagine futures) or <b>policies</b> (VLAs) — both fight the models' weakness (long-horizon generation) and put billions of parameters near the control loop. We use the third option: <b>judging</b>, which is one forward pass, asynchronous, and training-time only.</p>
+    <figure>
+      <img src="assets/fig1_system.png" alt="System architecture: training loop with critic vs deployment stack">
+      <figcaption>Three layers. A frozen GEAR-SONIC whole-body controller (50 Hz) handles walking, crouching, crawling. A small vision policy (~0.5M params, 3 Hz) picks heading, speed, and posture mode. The 2B-parameter critic exists only on the training side — the only thing that crosses to the robot is the small policy.</figcaption>
+    </figure>
+    <div class="story">
+      <div class="move"><b>1 — The problem is the reward.</b><p>Traversal quality in occupied clutter is perceptual and unwritable. Our own hand-crafted baseline reward silently collapsed PPO to standing still — the exact brittleness we're removing.</p></div>
+      <div class="move"><b>2 — Judging fits the model.</b><p>Recognition is easier than generation. Scoring "was that safe and natural?" takes one VLM pass over a short clip, not thirty diffusion steps per imagined frame.</p></div>
+      <div class="move"><b>3 — Supervision is free.</b><p>Privileged simulator state (clearance, contacts, person distance) converts to ordinal labels deterministically. ~6,000 clips labeled, zero human annotations — and the critic generalizes the judgment to pixels.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What the critic learns to judge</h2>
+    <p class="lead">Procedurally generated cluttered houses — narrow doorway gaps (0.6–1.2 m), low tables, furniture, moving people — traversed by scripted policies spanning five quality bands. The auto-labeler scores each episode on safety, clearance, motion quality, and social compliance, with safety as a hard ceiling.</p>
+    <div class="grid3">
+      <div class="card">
+        <img src="assets/rollout_good.gif" alt="Clean traversal rollout">
+        <div class="pad"><span class="tag good">score 5 — clean</span><h3>Well-cleared traversal</h3><p>Routes through gap centers, slows where tight, respects personal space, reaches the goal.</p></div>
+      </div>
+      <div class="card">
+        <img src="assets/rollout_skim.gif" alt="Skimming traversal rollout">
+        <div class="pad"><span class="tag mid">score 3 — sloppy</span><h3>Grazing the gap edge</h3><p>Gets through, but skims the wall at speed and hesitates — no crash, no craft.</p></div>
+      </div>
+      <div class="card">
+        <img src="assets/rollout_bad.gif" alt="Unsafe traversal rollout">
+        <div class="pad"><span class="tag bad">score 1 — unsafe</span><h3>Person collision</h3><p>Barges through occupied space and violates personal distance — safety caps the score at 1.</p></div>
+      </div>
+    </div>
+    <figure style="margin-top:26px">
+      <img src="assets/fig3_qualitative.png" alt="One episode per ground truth score">
+      <figcaption>One episode per ground-truth score, frames left to right in time (early-generation camera shown; later data uses an above-wall chase view after we found and fixed an occlusion confound).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="alt" id="results">
+  <div class="wrap">
+    <h2>Results so far</h2>
+    <p class="lead">Everything is evaluated on <b>held-out scenes</b> — novel layouts, gap widths, furniture, and appearance the critic never trained on.</p>
+    <div class="numbers">
+      <div class="stat"><div class="big">0.02 <span class="accent">→ 0.48</span></div><div class="lbl">Pearson r vs. ground truth, zero-shot → fine-tuned. The base model has no signal; training extracts it from pixels alone.</div></div>
+      <div class="stat"><div class="big"><span class="accent">2×</span></div><div class="lbl">Rare-score recall after class balancing (dangerous and excellent episodes) at flat overall correlation.</div></div>
+      <div class="stat"><div class="big"><span class="accent">42/42</span></div><div class="lbl">Real Unitree G1 clips scored in the correct band with zero parse failures — the sim-trained judgment transfers to real video.</div></div>
+      <div class="stat"><div class="big">0.15</div><div class="lbl">Held-out success of the hand-crafted-reward baseline (collisions in ~every episode) — the headroom the critic targets.</div></div>
+    </div>
+    <figure style="margin-top:26px">
+      <img src="assets/fig2_scaling.png" alt="Critic scaling curve">
+      <figcaption>The critic scales: quality prediction on held-out scenes improves monotonically with training clips, on progressively larger and harder validation sets.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/fig6_real_transfer.png" alt="Real robot video transfer">
+      <figcaption>The sim-trained critic scores real GEAR-SONIC release footage of a Unitree G1: every clip lands in the expected (collision-free) band, clean walking ranks highest, and a different-simulator control behaves consistently.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/fig5_confusion.png" alt="Class balancing ablation confusion matrices">
+      <figcaption>Class balancing recovers the rare scores: recall on dangerous (1) and excellent (5) episodes roughly doubles — the right trade for a reward model, where mistaking a dangerous episode for a good one is the costly error.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="paper">
+  <div class="wrap">
+    <h2>Paper</h2>
+    <div class="paperbox">
+      <h3>The World Model as Judge: Learned Traversal Rewards for Humanoid Navigation in Cluttered, Occupied Spaces</h3>
+      <p class="abstract">Humanoid robots can walk, but they cannot yet traverse the narrow, cluttered, human-occupied spaces where they are meant to work. The obstacle is not low-level control but <b>reward specification</b>: behaviors such as turning shoulders through a tight gap, crouching under furniture, or yielding to a person resist hand-crafted reward engineering, and their quality is inherently perceptual. We propose using a <b>video-language world model as a learned reward model</b>. We fine-tune a compact (2B) video-language model into a <i>traversal critic</i> that scores short navigation clips on collision safety, clearance management, motion quality, and social compliance, supervised by privileged simulator state automatically converted to ordinal labels — no human annotation. The critic then provides reward shaping for training a lightweight vision-based navigation policy that commands a frozen, pretrained whole-body controller; the world model is used <b>at training time only</b>, leaving deployment unencumbered. On held-out scenes, the fine-tuned critic predicts ground-truth traversal quality from pixels alone (Pearson r = 0.48 vs. 0.02 before fine-tuning), improving monotonically with data scale, and transfers to real robot video without collapse.</p>
+      <p><a class="badge primary" href="paper/draft.pdf">Read the draft (PDF)</a> &nbsp; <a class="badge" href="paper/pitch.md">Pitch kit</a></p>
+      <p class="abstract" style="margin-bottom:0"><b>Status:</b> working draft. The critic-shaped vs. hand-crafted-reward policy comparison (the headline experiment) is running; targets ICRA / ICLR.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Built on <a href="https://github.com/nvidia-cosmos/cosmos-framework">Cosmos3</a> (world model) and <a href="https://github.com/NVlabs/GR00T-WholeBodyControl">GEAR-SONIC</a> (whole-body control). Real-robot footage in Fig. 6 is from the GEAR-SONIC release media.
+  </div>
+</footer>
+
+</body>
+</html>
