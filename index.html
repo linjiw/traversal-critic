@@ -64,7 +64,7 @@ a { color: var(--accent); }
 <header class="hero">
   <div class="wrap">
     <h1>The World Model as Judge</h1>
-    <p class="subtitle">Learned traversal rewards for humanoid navigation in cluttered, occupied indoor spaces — the video world model scores the robot's behavior at training time, and never deploys.</p>
+    <p class="subtitle">Toward humanoid navigation in cluttered, occupied indoor spaces: a video world model scores the robot's behavior at training time — and never deploys. Current stage: the learned judge works; physics-in-the-loop training is next.</p>
     <div class="badges">
       <a class="badge primary" href="paper/draft.pdf">📄 Paper (draft PDF)</a>
       <a class="badge" href="https://github.com/linjiw/traversal-critic" id="code-link">💻 Code</a>
@@ -78,6 +78,9 @@ a { color: var(--accent); }
   <div class="wrap">
     <div class="pitch">
       <b>In 30 seconds:</b> Humanoids can walk now — but they still can't cross a cluttered living room with people in it. The blocker isn't balance; it's that nobody can <i>write down the reward</i> for "squeeze through that gap politely, duck under the table, don't crowd the person." So we don't write it — we <b>learn it from a video foundation model</b>. We fine-tune a video-language world model into a <b>traversal critic</b> that watches a rollout clip and scores it 1–5, then use that score as the reward for training a small navigation policy over a frozen whole-body controller. Nothing big deploys on the robot — and the critic's judgment transfers to real robot video.
+    </div>
+    <div style="max-width:860px;margin:16px auto 0;padding:12px 18px;background:#fdf6ec;border:1px solid #e8d9bd;border-radius:10px;font-size:0.92rem;color:#6b5518">
+      <b>Scope, honestly:</b> all results below are from a <b>kinematic simulator</b> (playback of a pretrained motion planner — no contact physics). The measured contribution today is the <b>critic</b> (a learned judge of traversal quality, r&nbsp;=&nbsp;0.53 on held-out scenes, ~71% of oracle shaping recovered). The <i>robot</i> capability — actually walking across cluttered, narrow homes — is the <b>goal</b>, not the current status: our best policy reaches 39% held-out success in this simplified setting. Physics-in-the-loop training (Isaac Lab + SONIC) is the next phase.
     </div>
   </div>
 </section>
@@ -105,7 +108,7 @@ a { color: var(--accent); }
     <div class="grid3">
       <div class="card">
         <img src="assets/rollout_good.gif" alt="Clean traversal rollout">
-        <div class="pad"><span class="tag good">score 5 — clean</span><h3>Well-cleared traversal</h3><p>Routes through gap centers, slows where tight, respects personal space, reaches the goal.</p></div>
+        <div class="pad"><span class="tag good">score 5 — clean clip</span><h3>Collision-free, brisk approach</h3><p>Routes through gap centers with margin. Note: the score rates the <i>clip's</i> quality — this episode ends at the 8&nbsp;s clip budget before reaching the goal.</p></div>
       </div>
       <div class="card">
         <img src="assets/rollout_skim.gif" alt="Skimming traversal rollout">
@@ -113,7 +116,7 @@ a { color: var(--accent); }
       </div>
       <div class="card">
         <img src="assets/rollout_bad.gif" alt="Unsafe traversal rollout">
-        <div class="pad"><span class="tag bad">score 1 — unsafe</span><h3>Person collision</h3><p>Barges through occupied space and violates personal distance — safety caps the score at 1.</p></div>
+        <div class="pad"><span class="tag bad">score 1 — unsafe</span><h3>Walks through a person</h3><p>The violation here is 23 frames of person-contact (the capsule), not furniture impact — safety is a hard ceiling, so the score is 1 regardless of other axes.</p></div>
       </div>
     </div>
     <figure style="margin-top:26px">
