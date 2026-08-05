@@ -21,12 +21,15 @@ provides reward shaping for a lightweight vision-based policy that commands a
 frozen whole-body controller, and it is used at training time only: no world
 model is deployed on the robot. On scenes held out at both the layout and
 appearance level, fine-tuning raises the critic's correlation with
-ground-truth traversal quality from r = 0.02 to r = 0.48, scaling with data.
-`[P2 closing sentence: "We further show that critic-shaped policies collide
-less often than hand-crafted-reward baselines at matched success rates" —
-swap in measured numbers, or if P2 slips: "Finally, we describe an
-asynchronous scoring architecture in which the critic never blocks policy
-optimization."]`
+ground-truth traversal quality from r = 0.15 to r = 0.53, improving
+monotonically with data scale, class balancing, and viewpoint quality on a
+single fixed validation set.
+Used as reward shaping for PPO, the critic recovers most of the benefit of
+its own privileged supervision: on 100 held-out-scene episodes, critic-shaped
+policies reach 39% success versus 5% for the hand-crafted baseline and 53%
+for an oracle shaped directly by the privileged auto-labeler — the
+pixels-only critic captures roughly three quarters of the oracle's gain
+without accessing simulator state.
 
 ---
 
@@ -47,7 +50,7 @@ clearance penalties, velocity bonuses, personal-space costs — are brittle
 surrogates that RL readily exploits. We show that a compact video-language
 model, fine-tuned on automatically labeled simulation clips, can predict a
 privileged-state traversal-quality score from pixels alone on held-out scenes
-(r = 0.48) — a prerequisite for using it as a learned shaping reward. Because
+(r = 0.53) — a prerequisite for using it as a learned shaping reward. Because
 it evaluates quality from pixels rather than privileged state, it can in
 principle be applied where privileged state does not exist; we present
 preliminary positive-transfer evidence on real robot footage and identify
@@ -76,16 +79,22 @@ policy on top of a frozen controller, with no world model on the robot.
    simulation.
 2. **Evidence the premise holds**: on scenes held out at the *scene* level
    (novel layouts, gap widths, furniture, appearance), the critic recovers
-   ground-truth traversal quality from pixels alone: Pearson r = 0.02
-   (pretrained, zero-shot) → 0.38 (460 training clips) → **0.48** (1,530
-   clips), acc±1 0.755 — a clean monotone scaling curve. `[v3: balanced
-   ~2,900-clip result]`
-3. **A system**: a three-layer architecture (frozen SONIC whole-body
+   ground-truth traversal quality from pixels alone. On a single fixed
+   590-clip validation set, the progression is strictly monotone across our
+   interventions: Pearson r = 0.148 (near-base) → 0.314 (460 clips) → 0.337
+   (1,530) → 0.369 (+ class balancing) → **0.534** (+ clean camera), acc±1
+   0.768, all with clip-bootstrap CIs.
+3. **The shaping result**: with identical PPO, seeds, and scene streams,
+   critic-shaped policies reach **39%** held-out-scene success vs **5%** for
+   the hand-crafted baseline and **53%** for an oracle shaped directly by the
+   privileged auto-labeler — the pixels-only critic recovers roughly three
+   quarters of its own supervision's benefit, answering the circularity
+   objection with a measured distillation gap.
+4. **A system**: a three-layer architecture (frozen SONIC whole-body
    controller at 50 Hz; small vision policy at ~3 Hz; critic as asynchronous
    training-time reward) with an async scoring protocol that never blocks RL
-   on the 2B model. `[P2: paired-seed comparison — critic-shaped vs.
-   hand-crafted-reward PPO on held-out scenes.]`
-4. **A quantified failure case for hand-crafted rewards**: our initial
+   on the 2B model.
+5. **A quantified failure case for hand-crafted rewards**: our initial
    baseline reward silently collapsed the policy to standing still —
    per-frame contact penalties dominated the progress term — illustrating the
    brittleness the critic is designed to remove.
@@ -207,7 +216,18 @@ critic is the best to date — Pearson 0.534 [0.469, 0.594], acc±1 0.768
 substantially rebalanced: GT-5 recall 0.15 → 0.42, GT-1 0.35 → 0.47,
 GT-3 0.19 → 0.35 relative to v3, at similar overall accuracy. A wall-fill-only
 shortcut probe explains r = 0.155, confirming occlusion statistics were not
-the critic's signal.
+the critic's signal. **Single-yardstick comparison** (all
+generations' best checkpoints re-evaluated on the one fixed clean-camera
+validation set, n = 590, 95% CIs): near-base 0.148 [—], 460 clips 0.314
+[0.237, 0.387], 1,530 clips 0.337 [0.262, 0.412], balanced 0.369 [0.296,
+0.441], clean-camera 0.534 [0.471, 0.595] — a strictly monotone
+progression on identical data, removing the changing-validation-set
+caveat from the scaling claim. Two honest observations: on this common
+yardstick, the earlier critics score lower than on their own in-domain
+val sets (their training distributions had the occluded camera, so
+clean-camera clips are out of distribution for them), and the near-base
+model shows weak non-zero correlation (0.148) — some traversal-quality
+signal exists in the pretrained model, and fine-tuning grows it by 3.6x.
 
 ### 4.2 Does critic shaping improve the policy? `[P2 — headline]`
 
@@ -217,21 +237,33 @@ metrics on held-out scenes: success rate, collision-episode rate, min
 clearance, person-space violations, time-to-goal, and auto-labeler axis
 scores (one ruler for policies and critic).
 
-**Baseline arm (measured).** 300k-step PPO with hand-crafted reward
-(progress + bounded contact + time). Training-scene success peaked ~0.43
-around 112k steps and degraded to ~0.32 by 300k (instability without KL/trust
-constraints on a small net). On the 40-episode held-out-scene eval:
+**Results (measured, peak-checkpoint comparison).** All three arms trained
+with identical code, seeds, scene streams, and 300k steps; peak checkpoints
+selected symmetrically by smoothed training success. On 100 held-out-scene
+episodes each:
 
-| checkpoint | success | collision-ep rate | mean auto-labeler score |
-|---|---|---|---|
-| baseline @ peak (112k) | 0.15 | 1.00 | 1.93 |
-| baseline @ last (300k) | 0.10 | 0.98 | 1.83 |
+| arm | success ↑ | collision-episode rate ↓ | auto-labeler score ↑ | steps-to-end ↓ |
+|---|---|---|---|---|
+| hand-crafted baseline (peak, 246k) | 0.05 | 0.95 | 1.80 | 56 |
+| **critic-shaped (peak, 92k)** | **0.39** | **0.89** | **2.00** | 46 |
+| oracle labeler-shaped (peak, 114k) | 0.53 | 0.88 | 2.22 | 29 |
 
-The train-to-held-out gap (0.43 → 0.15) and the near-100% collision rate
-quantify the headroom the critic-shaped arm targets. Notably, the
-hand-crafted reward reached moderate training-scene success, yet its policy
-collides in nearly every held-out episode and scores below 2 on the
-auto-labeler scale.
+Three observations. First, the hand-crafted baseline **overfits its training
+scenes catastrophically**: 0.53 smoothed training success collapses to 0.05
+on held-out layouts. Second, the **oracle arm establishes that episode-level
+quality shaping generalizes** — ten times the baseline's held-out success
+with fewer collision episodes and half the time-to-goal. Third — the paper's
+central result — the **pixels-only critic recovers roughly three quarters of
+the oracle's success gain (0.39 vs 0.53 over the 0.05 baseline) and half its
+quality gain**, despite never accessing privileged state: the distillation
+from privileged labels to pixels preserves most of the reward signal's
+value. Both shaped arms peak substantially earlier than the baseline
+(92–114k vs 246k steps) and decline after their peaks — vanilla PPO without
+trust-region constraints is unstable on this small network, and we report
+peak-vs-peak precisely because final-checkpoint comparisons would reflect
+that instability rather than reward quality (the critic arm's final
+checkpoint drops to 0.00 success while retaining a quality score of 2.01 —
+a cautious, non-goal-reaching policy).
 
 ### 4.3 Transfer to real robot video
 
