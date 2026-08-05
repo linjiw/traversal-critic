@@ -128,7 +128,7 @@ a { color: var(--accent); }
     <h2>Results so far</h2>
     <p class="lead">Everything is evaluated on <b>held-out scenes</b> — novel layouts, gap widths, furniture, and appearance the critic never trained on.</p>
     <div class="numbers">
-      <div class="stat"><div class="big">0.02 <span class="accent">→ 0.48</span></div><div class="lbl">Pearson r vs. ground truth, zero-shot → fine-tuned. The base model has no signal; training extracts it from pixels alone.</div></div>
+      <div class="stat"><div class="big">0.02 <span class="accent">→ 0.53</span></div><div class="lbl">Pearson r vs. ground truth, zero-shot → fine-tuned (clean-camera v4). The base model has no signal; training extracts it from pixels alone.</div></div>
       <div class="stat"><div class="big"><span class="accent">2×</span></div><div class="lbl">Rare-score recall after class balancing (dangerous and excellent episodes) at flat overall correlation.</div></div>
       <div class="stat"><div class="big"><span class="accent">42/42</span></div><div class="lbl">Real Unitree G1 clips scored in the correct band with zero parse failures — the sim-trained judgment transfers to real video.</div></div>
       <div class="stat"><div class="big">0.15</div><div class="lbl">Held-out success of the hand-crafted-reward baseline (collisions in ~every episode) — the headroom the critic targets.</div></div>
