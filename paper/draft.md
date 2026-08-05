@@ -190,7 +190,7 @@ Spearman, per-class recall).
 | critic v1 (best ckpt)       | 460         | 140       | 0.377     | 0.679     | 0.457 |
 | critic v2 (best ckpt)       | 1,530       | 470       | **0.482** | **0.755** | 0.517 |
 | critic v3 (balanced)        | 2,930       | 670       | 0.452     | 0.743     | 0.460 |
-| critic v4 (clean camera)    | 2,410       | 590       | **0.526** | **0.769** | 0.459 |
+| critic v4 (clean camera)    | 2,410       | 590       | **0.534** | **0.768** | 0.476 |
 
 Scaling is monotone in data and steps through v2. **v3 isolates class
 balancing** (manifest oversampling to uniform per-score weight): overall
@@ -202,9 +202,9 @@ confusions that balancing removes. **v4 isolates the camera confound**
 (§4.4 note): v1–v3 clips blank out the robot for 30–47% of frames in some
 regimes (chase camera below wall height; wall-fill fraction correlated with
 score band); v4 regenerates all data with an above-wall view. The clean-camera
-critic is the best to date — Pearson 0.526 [0.462, 0.583], acc±1 0.769
-[0.734, 0.803] (95% clip-bootstrap CIs) — and its confusion matrix is
-substantially rebalanced: GT-5 recall 0.15 → 0.42, GT-1 0.35 → 0.43,
+critic is the best to date — Pearson 0.534 [0.469, 0.594], acc±1 0.768
+[0.732, 0.803] (95% clip-bootstrap CIs; best checkpoint iter 700 of 800) — and its confusion matrix is
+substantially rebalanced: GT-5 recall 0.15 → 0.42, GT-1 0.35 → 0.47,
 GT-3 0.19 → 0.35 relative to v3, at similar overall accuracy. A wall-fill-only
 shortcut probe explains r = 0.155, confirming occlusion statistics were not
 the critic's signal.
@@ -233,26 +233,23 @@ hand-crafted reward reached moderate training-scene success, yet its policy
 collides in nearly every held-out episode and scores below 2 on the
 auto-labeler scale.
 
-### 4.3 Real-robot video transfer (measured, preliminary — **being re-run**)
-
-> **Validity note (internal):** a code review found the serving path fed the
-> model 4 frames with fabricated 0.6 s timestamps instead of training's ~17
-> frames / real timestamps (transformers drops the per-item fps key without
-> explicit video_metadata). The numbers below were measured through that
-> skewed path and are being re-measured with the fixed decode; treat them as
-> provisional. The sim val metrics (§4.1) are unaffected — eval_videophy2
-> uses an honest decode path (verified).
+### 4.3 Transfer to real robot video
 
 We score 42 clips of **real Unitree G1 footage** (GEAR-SONIC release media:
 in-the-wild navigation, style walks, impaired gait, crawling, kneeling) plus
 27 clips from a *different* simulator, using the best sim-trained critic.
 No privileged state exists for this footage, so no auto-label can.
 
-Result: **zero parse failures; every clip scored in the 4–5 band** — the
-correct range, since all release demos are collision-free — with clean
-walking scoring highest (mean 4.30, the only real regime awarded 5s) and
-crawl/impaired/posture regimes uniformly at 4.0. The critic transfers to
-real video without collapsing to noise or misreading clean demos as unsafe.
+Result (v4 best checkpoint, decode path verified to match training):
+**zero parse failures; every clip scored in the 4–5 band** — the correct
+range, since all release demos are collision-free. Clean walking scores
+highest among multi-clip real regimes (mean 4.80, 8/10 clips at 5), crawling
+lowest (4.0), with posture-change and the different-simulator control in
+between (4.5 / 4.63). The critic transfers to real video without collapsing
+to noise or misreading clean demos as unsafe. (The single impaired-gait clip
+scored 5 — n=1; the auto-labeler's rubric has no gait-quality channel, so
+this is consistent with its supervision, and a reminder that the critic
+inherits its labeler's blind spots.)
 Two limitations qualify this result: (i) the released footage contains no negative examples
 (no real collisions), so this test establishes *transfer without collapse*,
 not full discrimination on real video — closing that requires collecting
