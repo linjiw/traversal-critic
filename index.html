@@ -80,7 +80,7 @@ a { color: var(--accent); }
       <b>In 30 seconds:</b> Humanoids can walk now — but they still can't cross a cluttered living room with people in it. The blocker isn't balance; it's that nobody can <i>write down the reward</i> for "squeeze through that gap politely, duck under the table, don't crowd the person." So we don't write it — we <b>learn it from a video foundation model</b>. We fine-tune a video-language world model into a <b>traversal critic</b> that watches a rollout clip and scores it 1–5, then use that score as the reward for training a small navigation policy over a frozen whole-body controller. Nothing big deploys on the robot — and the critic's judgment transfers to real robot video.
     </div>
     <div style="max-width:860px;margin:16px auto 0;padding:12px 18px;background:#fdf6ec;border:1px solid #e8d9bd;border-radius:10px;font-size:0.92rem;color:#6b5518">
-      <b>Scope, honestly:</b> all results below are from a <b>kinematic simulator</b> (playback of a pretrained motion planner — no contact physics). The measured contribution today is the <b>critic</b> (a learned judge of traversal quality, r&nbsp;=&nbsp;0.53 on held-out scenes, ~71% of oracle shaping recovered). The <i>robot</i> capability — actually walking across cluttered, narrow homes — is the <b>goal</b>, not the current status: our best policy reaches 39% held-out success in this simplified setting. Physics-in-the-loop training (Isaac Lab + SONIC) is the next phase.
+      <b>Scope, honestly:</b> the policy results below are from a <b>kinematic simulator</b> (playback of a pretrained motion planner — no contact physics). The measured contribution today is the <b>critic</b> (a learned judge of traversal quality, r&nbsp;=&nbsp;0.53 on held-out scenes, ~71% of oracle shaping recovered). The <i>robot</i> capability — actually walking across cluttered, narrow homes — is the <b>goal</b>, not the current status: our best policy reaches 39% held-out success in this simplified setting. <b>Update (Aug 5):</b> a physics-in-the-loop harness is now running — the full SONIC control stack (motion-token encoder/decoder → PD torques) under real MuJoCo contact dynamics; the demos below marked <i>physics</i> use it, and the three-arm reward comparison is being re-run under physics.
     </div>
   </div>
 </section>
@@ -123,6 +123,22 @@ a { color: var(--accent); }
       <img src="assets/fig3_qualitative.png" alt="One episode per ground truth score">
       <figcaption>One episode per ground-truth score, frames left to right in time (early-generation camera shown; later data uses an above-wall chase view after we found and fixed an occlusion confound).</figcaption>
     </figure>
+
+    <h2 style="margin-top:40px">New: real contact dynamics (physics-in-the-loop)</h2>
+    <p class="lead">The full released SONIC stack — kinematic planner → motion-token encoder → decoder → PD torques — now runs under MuJoCo contact physics in our cluttered scenes. Clutter pushes back, falls are real, and the mode decision (walk vs. crawl) has physical consequences. These clips are <b>scripted routes with a fixed mode rule</b>, not the learned policy: they demonstrate the environment and control stack, and are the substrate the reward-learning comparison is being re-run on.</p>
+    <div class="grid3">
+      <div class="card">
+        <img src="assets/physics_gap_walk.gif" alt="Physics walk through narrow gap">
+        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Narrow-gap walk under contact dynamics</h3><p>Held-out scene, 0.8&nbsp;m doorway. Success with 0.5 contact-seconds; the controller absorbs a doorframe brush instead of the pose being teleported past it.</p></div>
+      </div>
+      <div class="card">
+        <img src="assets/physics_crawl_table.gif" alt="Physics crawl under low table">
+        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Hand-crawl under a 1.19&nbsp;m table</h3><p>Walks two gaps, drops to hand-crawl, passes <i>under</i> the tabletop (0.42 contact-seconds), reaches the goal. Under kinematic playback this scene was an unresolvable stall.</p></div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;background:#f6f8fb">
+        <div class="pad" style="text-align:left"><span class="tag mid">what's still scripted</span><h3>The decision is the open part</h3><p>All scripted-route failures (3/8 scenes) are person collisions — the fixed route cannot yield. Choosing when to slow, yield, or change posture from <i>pixels</i> is exactly what the critic-shaped policy is being trained to do, now under physics.</p></div>
+      </div>
+    </div>
   </div>
 </section>
 
