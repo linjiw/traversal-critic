@@ -229,12 +229,24 @@ validation set, n = 590, 95% CIs): near-base 0.148 [—], 460 clips 0.314
 [0.237, 0.387], 1,530 clips 0.337 [0.262, 0.412], balanced 0.369 [0.296,
 0.441], clean-camera 0.534 [0.471, 0.595] — a strictly monotone
 progression on identical data, removing the changing-validation-set
-caveat from the scaling claim. Two honest observations: on this common
+caveat from the scaling claim. Honest observations: on this common
 yardstick, the earlier critics score lower than on their own in-domain
 val sets (their training distributions had the occluded camera, so
-clean-camera clips are out of distribution for them), and the near-base
+clean-camera clips are out of distribution for them); the near-base
 model shows weak non-zero correlation (0.148) — some traversal-quality
-signal exists in the pretrained model, and fine-tuning grows it by 3.6x.
+signal exists in the pretrained model, and fine-tuning grows it by 3.6x;
+the v4 checkpoint (iter 700) was selected by Pearson on this same
+yardstick while v1–v3 checkpoints were selected on their own val sets —
+a mild asymmetry whose effect is bounded by the neighboring checkpoints
+(iter 600 = 0.526, iter 800 = 0.533, both within the reported CI); and
+the v4 training run also changed token/batch budgets relative to v1–v3
+(max_tokens 4500 vs 8000, grad-accum 21 vs 16), so the v3→v4 jump is
+attributable to the clean camera *plus* the budget change, not the
+camera in isolation. Finally, v4 regenerated the data with the clean
+camera but predates two scene-generator fixes (a goal-adjacent-gap
+clearance artifact affecting ~0.5% of scenes and people clipping through
+gap walls in a minority of peopled scenes); the v5 regeneration folds in
+all fixes with a pinned labeler version.
 
 ### 4.2 Does critic shaping improve the policy? `[P2 — headline]`
 
@@ -245,9 +257,14 @@ clearance, person-space violations, time-to-goal, and auto-labeler axis
 scores (one ruler for policies and critic).
 
 **Results (measured, peak-checkpoint comparison).** All three arms trained
-with identical code, seeds, scene streams, and 300k steps; peak checkpoints
-selected symmetrically by smoothed training success. On 100 held-out-scene
-episodes each:
+with identical code, seeds, and scene streams for at least 300k steps; peak
+checkpoints selected symmetrically by smoothed training success. Two
+disclosures: (i) this comparison is a single seed per arm — a multi-seed
+replication is running and will replace this table; (ii) the baseline arm
+crash-resumed twice with a then-buggy step counter and effectively received
+~2× the training budget of the shaped arms — an error in the baseline's
+*favor* (it trained longest and still generalizes worst), since fixed. On
+100 held-out-scene episodes each:
 
 | arm | success ↑ | collision-episode rate ↓ | auto-labeler score ↑ | steps-to-end ↓ |
 |---|---|---|---|---|
@@ -306,10 +323,35 @@ real video — closing both requires collecting deliberately-flawed real
 rollouts; (iii) score compression toward 4 mirrors the training
 distribution's mode.
 
-### 4.4 Further ablations (planned)
+### 4.4 Why a video-LM? The frozen-probe control
 
-Critic checkpoint quality vs. policy gain; λ sensitivity; band-3 "clean but
-sloppy" discrimination; real negative-example collection.
+The control experiment reviewers will ask for: is the fine-tuned 2B model
+doing anything a frozen vision encoder plus a small probe cannot? We fit a
+weighted ridge ordinal probe on the **same SigLIP2 tower the critic starts
+from** (frozen, 8 frames, concat[mean, std] temporal pooling) using the
+exact v4 train manifest, selecting the regularizer by 5-fold CV on train
+(validation untouched), and compare digit-for-digit (Pearson on rounded
+predictions, since the critic emits digits).
+
+**In-domain, the probe is competitive**: r = 0.545 on the 590-clip held-out-
+scene validation set vs. the critic's 0.534, with similar acc±1. Most of the
+auto-labeler's signal is linearly recoverable from frozen per-frame
+appearance features plus their temporal variance — an honest and useful
+negative for anyone who only needs an in-domain reward.
+
+**Off-distribution, the probe fails catastrophically while the critic stays
+calibrated.** Scoring the same real-G1 and cross-simulator clips as §4.3,
+the probe extrapolates far outside the 1–5 scale (real-footage regime means
+7.6–9.6, individual clips to 9.9; cross-sim mean 5.1), and its regime
+ordering is inverted (crawl and posture-change score *above* clean walking).
+The fine-tuned critic keeps every one of the same 42 clips in the valid 4–5
+band with a sensible ordering (§4.3). This is the concrete value of the
+video-LM prior for a *reward model*: not in-domain accuracy, but bounded,
+calibrated judgment under domain shift — exactly the property a reward
+signal must keep when the policy distribution moves during RL. A reward
+that can emit 9.9 on out-of-distribution observations is an invitation to
+reward hacking; one that saturates at 5 is not.
+(Artifacts: `probe_baseline_v4.json`, `probe_real_transfer.json`.)
 
 ### 4.5 Failure modes of hand-crafted rewards
 
@@ -318,6 +360,11 @@ that standing still dominates walking (per-frame contact penalties × 15
 frames/step > max progress term). A single line of reward arithmetic caused a silent
 collapse. This is precisely the failure mode a learned critic avoids: its judgment is
 holistic and episode-level rather than a sum of per-frame proxies that the policy can exploit.
+
+### 4.6 Further ablations (planned)
+
+Critic checkpoint quality vs. policy gain; λ sensitivity; band-3 "clean but
+sloppy" discrimination; real negative-example collection.
 
 ---
 
