@@ -24,12 +24,12 @@ appearance level, fine-tuning raises the critic's correlation with
 ground-truth traversal quality from r = 0.15 to r = 0.53, improving
 monotonically with data scale, class balancing, and viewpoint quality on a
 single fixed validation set.
-Used as reward shaping for PPO, the critic recovers most of the benefit of
-its own privileged supervision: on 100 held-out-scene episodes, critic-shaped
-policies reach 39% success versus 5% for the hand-crafted baseline and 53%
-for an oracle shaped directly by the privileged auto-labeler — the
-pixels-only critic captures roughly three quarters of the oracle's gain
-without accessing simulator state.
+Used as reward shaping for PPO in a kinematic-playback environment, the
+critic recovers most of the benefit of its own privileged supervision: on 100
+held-out-scene episodes, critic-shaped policies reach 39% success versus 5%
+for the hand-crafted baseline and 53% for an oracle shaped directly by the
+privileged auto-labeler — the pixels-only critic captures roughly three
+quarters of the oracle's gain without accessing simulator state.
 
 ---
 
@@ -84,8 +84,9 @@ policy on top of a frozen controller, with no world model on the robot.
    interventions: Pearson r = 0.148 (near-base) → 0.314 (460 clips) → 0.337
    (1,530) → 0.369 (+ class balancing) → **0.534** (+ clean camera), acc±1
    0.768, all with clip-bootstrap CIs.
-3. **The shaping result**: with identical PPO, seeds, and scene streams,
-   critic-shaped policies reach **39%** held-out-scene success vs **5%** for
+3. **The shaping result** (kinematic-playback environment): with identical
+   PPO, seeds, and scene streams, critic-shaped policies reach **39%**
+   held-out-scene success vs **5%** for
    the hand-crafted baseline and **53%** for an oracle shaped directly by the
    privileged auto-labeler — the pixels-only critic recovers roughly three
    quarters of its own supervision's benefit, answering the circularity
@@ -158,7 +159,13 @@ contact flags.
 (contact duration), clearance (5th-percentile margin + slow-when-tight
 bonus), social (min person distance), progress (goal-rate + freeze penalty) —
 composed as overall = min(safety, half-down-round(mean)). Safety is a hard
-ceiling: a collision episode cannot score well on style. Scene-hash split:
+ceiling: a collision episode cannot score well on style. One rubric
+decision matters for interpretation: the progress axis scores the **rate** of
+goal approach within the clip, not task completion — a deliberate choice for a
+clip-level judge of short (8 s) windows, but it means a collision-free,
+briskly-approaching episode can score 5 without arriving. Completion is
+carried by the RL task reward, not the critic; a completion-aware progress
+term is planned for the next dataset revision. Scene-hash split:
 validation scenes are entirely unseen (layout *and* appearance).
 
 **Model.** Cosmos3-Edge reasoner (Nemotron-2B LM + SigLIP2 tower), SFT on
@@ -263,30 +270,41 @@ trust-region constraints is unstable on this small network, and we report
 peak-vs-peak precisely because final-checkpoint comparisons would reflect
 that instability rather than reward quality (the critic arm's final
 checkpoint drops to 0.00 success while retaining a quality score of 2.01 —
-a cautious, non-goal-reaching policy).
+a cautious, non-goal-reaching policy). We also note that the
+collision-episode rate is near-saturated across arms (0.88–0.95): under dense
+clutter and a binary any-contact-in-20s definition, it does not separate a 5%
+policy from a 53% oracle, and success rate plus the auto-labeler score are the
+discriminating endpoints. Graded contact metrics (contact-seconds,
+collisions per meter) are the appropriate replacements and will accompany the
+physics-in-the-loop experiments.
 
 ### 4.3 Transfer to real robot video
 
-We score 42 clips of **real Unitree G1 footage** (GEAR-SONIC release media:
-in-the-wild navigation, style walks, impaired gait, crawling, kneeling) plus
-27 clips from a *different* simulator, using the best sim-trained critic.
-No privileged state exists for this footage, so no auto-label can.
+We score **15 clips of real Unitree G1 footage** (GEAR-SONIC release media:
+in-the-wild navigation, impaired gait, crawling, posture changes) plus
+**27 clips from a *different* simulator** (42 clips total), using the best
+sim-trained critic. No privileged state exists for this footage, so no
+auto-label can.
 
 Result (v4 best checkpoint, decode path verified to match training):
-**zero parse failures; every clip scored in the 4–5 band** — the correct
-range, since all release demos are collision-free. Clean walking scores
-highest among multi-clip real regimes (mean 4.80, 8/10 clips at 5), crawling
-lowest (4.0), with posture-change and the different-simulator control in
-between (4.5 / 4.63). The critic transfers to real video without collapsing
-to noise or misreading clean demos as unsafe. (The single impaired-gait clip
-scored 5 — n=1; the auto-labeler's rubric has no gait-quality channel, so
-this is consistent with its supervision, and a reminder that the critic
-inherits its labeler's blind spots.)
-Two limitations qualify this result: (i) the released footage contains no negative examples
-(no real collisions), so this test establishes *transfer without collapse*,
-not full discrimination on real video — closing that requires collecting
-deliberately-flawed real rollouts; (ii) score compression toward 4 mirrors
-the training distribution's mode.
+**zero parse failures across all 42 clips; every clip scored in the 4–5
+band** — the correct range, since all release demos are collision-free.
+Clean walking scores highest among real regimes (mean 4.80, 8/10 clips
+at 5), crawling lowest (4.0, n=2), with posture-change (4.5, n=2) and the
+different-simulator control (4.63, n=27) in between. The critic transfers
+to real video without collapsing to noise or misreading clean demos as
+unsafe. (The single impaired-gait clip scored 5 — n=1; the auto-labeler's
+rubric has no gait-quality channel, so this is consistent with its
+supervision, and a reminder that the critic inherits its labeler's blind
+spots.)
+Three limitations qualify this result: (i) only 15 clips are real robot
+footage, and the per-regime means outside clean walking rest on 1–2 clips
+each — this is *transfer without collapse at n=15*, not a quantitative
+real-video benchmark; (ii) the released footage contains no negative
+examples (no real collisions), so it cannot establish discrimination on
+real video — closing both requires collecting deliberately-flawed real
+rollouts; (iii) score compression toward 4 mirrors the training
+distribution's mode.
 
 ### 4.4 Further ablations (planned)
 
@@ -307,28 +325,58 @@ holistic and episode-level rather than a sum of per-frame proxies that the polic
 
 - **Fig 1 (system)**: three-layer architecture; what deploys vs. what judges.
   → `paper/figures/fig1_system.svg`
-- **Fig 2 (scaling)**: critic Pearson vs. training clips (0.02 → 0.38 → 0.48
-  → `[v3]`), with acc±1 as secondary panel.
-  → `paper/figures/fig2_scaling.html` (export to PDF/SVG for submission)
-- **Fig 3 (qualitative)**: five clips, one per score, with critic score vs.
-  auto-labeler score; egocentric frames strip.
-- **Fig 4 (P2 headline)**: paired bars — the three PPO arms on the endpoint
-  metrics.
+- **Fig 2 (scaling)**: critic Pearson vs. training clips across generations
+  with clip-bootstrap CIs; v3 detached as the balancing intervention.
+  → `paper/figures/fig2_scaling.svg`
+- **Fig 3 (qualitative)**: one episode per ground-truth score, clean-camera
+  chase view, worst-clearance frame outlined.
+  → `paper/figures/fig3_qualitative.png`
+- **Fig 4 (P2 headline)**: three PPO reward arms on held-out scenes, peak
+  checkpoints, dot + CI small multiples.
+  → `paper/figures/fig4_arms.svg`
 - **Fig 5 (confusion)**: v2 vs. v3 confusion matrices — the class-balance
-  ablation, visually.
+  ablation, visually. → `paper/figures/fig5_confusion.png`
+- **Fig 6 (real transfer)**: per-regime scores on real G1 (n=15) and
+  cross-sim (n=27) clips. → `paper/figures/fig6_real_transfer.svg`
 
 ## 6. Reproducibility notes
 
 Single shared 22 GiB L4 for everything (critic SFT, eval, scoring); CPU for
 rollout generation (planner ONNX ~35 ms) and PPO. Full recipe: branch
-`feat/traversal-critic` — generator, labeler (+18 unit tests), SFT SKU/TOML,
-eval sweep, scorer daemon, nav env, PPO trainer, paired evaluator.
+`feat/traversal-critic` — generator, labeler (+23 unit tests), SFT SKU/TOML,
+eval sweep, scorer daemon, nav env, PPO trainer, paired evaluator. Labeler
+rubric versions are pinned (`LABELER_VERSION`, written into every dataset
+and eval artifact): v1 = rate-based progress (all published §4 numbers),
+v2 = completion-aware progress, v3 = physics clearance calibration (v5 data
+and the physics arms).
 
 ## 7. Limitations & staging
 
-Kinematic playback (no physics response) in phase 1–2; SONIC tracker
-physics-in-the-loop is phase 2-proper (Isaac Lab, pinned 4.5, GRScenes-100 +
-people layer); real-G1 deployment is phase 4 (ZMQ command path verified in
-repo docs). Critic gate (Pearson ≥ 0.7) not yet met — scaling curve suggests
-data, not architecture, is the binding constraint. Auto-labels inherit
-threshold choices; the human-label override path exists for calibration.
+The shaping experiments of §4.2 use kinematic playback (no physics response).
+A physics-in-the-loop harness now exists (`docs/sonic_physics_harness.md`):
+the full released SONIC stack (planner → motion-token encoder → decoder →
+PD torques) runs under MuJoCo contact dynamics in the same procedural scenes,
+with real falls, wedging, and contact forces. Under this harness a scripted
+route with a naive mode rule already walks 0.8–0.9 m gaps and hand-crawls
+under a 1.19 m table (0.42 contact-seconds); the three-arm PPO comparison is
+being re-run under physics, which will replace the kinematic qualifier on the
+shaping result. A calibration point for how much harder physics is: a
+scripted expert with *privileged* waypoints, a height-aware crouch/crawl
+rule, and a naive stop-when-close yield rule reaches only 25% success on the
+100 held-out-scene episodes (47% person collisions, 8% falls, SPL 0.21) —
+the yield rule stops in the person's lane or deadlocks in corridors.
+When/where/how to yield is perceptual; that is the gap the critic-shaped
+policy is trained to close. Physics also forced two labeler revisions worth
+reporting: the clearance thresholds must be recalibrated for a swaying,
+limb-swinging body (a clean physical traversal measures p5 clearance
+0.08–0.24 m where kinematic playback measured ≥0.30 m — with kinematic cuts,
+label 5 was unreachable on physics data), and the tight-gap "turn shoulders
+and strafe" behavior scripted into the kinematic quality bands turns out to
+*fall* under physics (the tracker was not trained for sustained lateral
+gait) — partial shoulder turns up to ~35° track fine. Both are examples of
+kinematic playback silently hiding dynamics that change the labels. Real-G1 deployment is staged after that (ZMQ command path
+verified in repo docs). Critic gate (Pearson ≥ 0.7) not yet met — scaling
+curve suggests data, not architecture, is the binding constraint. Auto-labels
+inherit threshold choices; the human-label override path exists for
+calibration; a completion-aware progress axis (arrival required for a 5) is
+implemented and takes effect with the next dataset generation.

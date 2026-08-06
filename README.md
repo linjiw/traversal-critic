@@ -25,11 +25,11 @@ over a frozen GEAR-SONIC whole-body controller. The world model **never deploys*
 
 | claim | number |
 |---|---|
-| Base model has no signal | Pearson **0.02** zero-shot |
-| Fine-tuning extracts signal from pixels | **0.38** @ 460 clips → **0.48** @ 1,530 clips (held-out scenes) |
+| Fine-tuning extracts signal from pixels | Pearson **0.148** near-base → **0.534** best critic (one fixed 590-clip held-out-scene yardstick, strictly monotone across interventions) |
 | Balancing fixes the rare scores | GT-1/GT-5 recall roughly **doubles** |
-| **It transfers to real robot video** | 42 real G1 clips: 0 parse failures, all in the correct band |
-| Hand-crafted rewards fail measurably | baseline PPO: held-out success 0.15, collisions ~every episode |
+| **Critic shaping works** | held-out success: baseline **5%** → critic-shaped **39%** (oracle upper bound 53%) — kinematic env; physics rerun in flight |
+| It transfers to real robot video | **15 real G1 clips** + 27 cross-sim: 0 parse failures, all in the correct band (transfer without collapse; no real negatives yet) |
+| Hand-crafted rewards fail measurably | baseline PPO overfits: 0.51 train success → 0.05 held-out |
 
 ![scaling](assets/fig2_scaling.png)
 
