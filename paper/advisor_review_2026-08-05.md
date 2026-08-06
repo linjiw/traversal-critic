@@ -101,6 +101,55 @@ Consequences:
   success 0.15) and the 42-real-clips claim. The index.html abstract also still says
   r = 0.48 while the stat tile above it says 0.53.
 
+### 3.6 v4 data predates the scene fixes — the "clean" dataset still has both scene bugs — HIGH
+
+The scene-generator fixes in commit 0273635 (goal-adjacent gap wall producing spurious
+negative clearance; "ghost walkers" phasing through gap walls in ~20% of peopled scenes)
+were committed **2026-08-04**, but `rollouts_v4` was generated **2026-08-02** (file
+timestamps; confirmed by RNG reconstruction — v4 scenes still use the old gap-position
+population `[2,3,4,5]`, and ~25 of the 59 v4 val scenes contain the gap-at-5 geometry).
+So v4 fixed **only the camera**; the paper's implication that v4 is the cleaned
+regeneration is wrong on two of three known data bugs. Both the labels (clearance axis fed
+by buggy geometry) and the pixels (walkers clipping through walls) are affected. A v5
+regeneration with the fixed generator + fixed camera + completion-aware labeler is the
+coherent move — it resolves this, 3.4, and the labeler-version pinning in one run.
+
+### 3.7 "v4 isolates the camera confound" is not a clean isolation — MEDIUM
+
+v4 trained with materially different budgets than v1–v3: `max_tokens=4500`,
+`qwen_max_video_token_length=4096`, `grad_accum_iter=21` (v4 supervisor overrides,
+confirmed in the run's config.yaml) vs 8000/8192/16 for earlier generations. The
+0.369 → 0.534 jump attributed to the clean camera is confounded with a changed
+video-token/resolution budget and effective batch size. Either rerun v3-data training
+under the v4 budget (one training run) or soften the isolation claim to "camera +
+training-budget change."
+
+### 3.8 Smaller measurement issues — LOW
+
+- **Select-on-test asymmetry on the headline curve**: v4_best (iter_700) was chosen by
+  Pearson on the same 590-clip common yardstick it is reported on, while v1–v3 bests were
+  chosen on their own val sets. Effect is small (iter_600 = 0.526, iter_800 = 0.533) but
+  the protocol favors v4; disclose it or pick v4's checkpoint on its own in-domain val.
+- **Parse-failure handling differs between tools**: `eval_videophy2` counts an unparseable
+  reply as a miss (n stays 590); `critic_metrics_ci.py` and `analyze_critic_eval.py` drop
+  it (n=589 for nearbase). ≤1 clip per run here, but the paper quotes acc from one tool
+  and CIs from the other — unify.
+- **Real-video clips play at ~0.8× speed**: `eval_critic_on_real_videos.py` strides with
+  `int(fps // 12)` — for 29.97-fps sources that's stride 2 (≈15 fps) written with fps=12
+  metadata, mild slow-motion vs training. A residual decode-domain mismatch after the
+  4-frame fix; direction of bias unknown; fix the stride rounding before the negative-clips
+  rerun.
+
+### Additional checks that came back clean
+
+- Scene-cluster bootstrap (10 clips/scene clustering) barely moves the v4 CI:
+  [0.461, 0.602] vs clip-level [0.465, 0.595] — the clip-level CIs in the paper are
+  defensible.
+- Prompt byte-identical across all generations and matches `PROMPT_TEMPLATE`; common-val
+  re-eval used identical script/args for all five points on the curve.
+- Clip-duration shortcut ruled out: Pearson(frame count, label) = 0.059 on v4 val.
+- Balancing duplicate-id scheme is collision-free and train-manifest-only.
+
 ## 4. Design-validity concerns (not bugs — decisions to defend or change)
 
 1. **Critic checkpoint selected on the same val set it reports on.** iter_700 was chosen by
@@ -154,13 +203,19 @@ result is publishable.
 ### Priority queue (my ordering, cost-weighted)
 
 1. Fix the 42-clips error everywhere (hours).
-2. Multi-seed arms matrix, ≥3 seeds × 3 arms, clean no-resume runs (days, CPU).
-3. Log bonus-applied/dropped + regenerate PDF + sync the two paper copies (hours).
-4. Frozen-SigLIP / from-scratch probe baseline on v4 manifests (days, the one missing
-   scientific control).
-5. Real/cross-sim negative clips for the transfer section (days).
-6. Q-Align-style expectation head (cheap, addresses the measured central-tendency bias).
-7. Isaac Lab physics-in-the-loop (the 6–12-month track — start, but don't gate the paper
+2. **v5 dataset regeneration** with fixed scene generator + clean camera +
+   completion-aware labeler + pinned `LABELER_VERSION` — resolves 3.4 and 3.6 in one run;
+   retrain the critic on it under a documented budget (resolves 3.7's ambiguity going
+   forward). This supersedes patching v4.
+3. Multi-seed arms matrix, ≥3 seeds × 3 arms, clean no-resume runs, oracle on the v5
+   labeler (days, CPU).
+4. Log bonus-applied/dropped + regenerate PDF + sync the two paper copies + fix the
+   real-video stride (hours).
+5. Frozen-SigLIP / from-scratch probe baseline on the same manifests (days, the one
+   missing scientific control).
+6. Real/cross-sim negative clips for the transfer section (days).
+7. Q-Align-style expectation head (cheap, addresses the measured central-tendency bias).
+8. Isaac Lab physics-in-the-loop (the 6–12-month track — start, but don't gate the paper
    on it).
 
 ## 6. Questions for you (the author)

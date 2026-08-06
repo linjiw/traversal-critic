@@ -135,8 +135,9 @@ a { color: var(--accent); }
         <img src="assets/physics_crawl_table.gif" alt="Physics crawl under low table">
         <div class="pad"><span class="tag good">physics — scripted route</span><h3>Hand-crawl under a 1.19&nbsp;m table</h3><p>Walks two gaps, drops to hand-crawl, passes <i>under</i> the tabletop (0.42 contact-seconds), reaches the goal. Under kinematic playback this scene was an unresolvable stall.</p></div>
       </div>
-      <div class="card" style="display:flex;align-items:center;justify-content:center;background:#f6f8fb">
-        <div class="pad" style="text-align:left"><span class="tag mid">what's still scripted</span><h3>The decision is the open part</h3><p>All scripted-route failures (3/8 scenes) are person collisions — the fixed route cannot yield. Choosing when to slow, yield, or change posture from <i>pixels</i> is exactly what the critic-shaped policy is being trained to do, now under physics.</p></div>
+      <div class="card">
+        <img src="assets/physics_yield_person.gif" alt="Physics yield to crossing person then crawl">
+        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Yield to the person, then crawl</h3><p>Stops while the person crosses, resumes, drops under the table, reaches the goal. But the same naive stop-when-close rule only gets <b>25% success over 100 held-out scenes</b> (47% person collisions: it stops <i>in the person's lane</i> or deadlocks) — when and where to yield is perceptual, and that's the decision the critic-shaped policy is being trained to make.</p></div>
       </div>
     </div>
   </div>
