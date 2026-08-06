@@ -151,7 +151,8 @@ a { color: var(--accent); }
       <div class="stat"><div class="big">0.02 <span class="accent">→ 0.53</span></div><div class="lbl">Pearson r vs. ground truth, zero-shot → fine-tuned (clean-camera v4). The base model has no signal; training extracts it from pixels alone.</div></div>
       <div class="stat"><div class="big"><span class="accent">2×</span></div><div class="lbl">Rare-score recall after class balancing (dangerous and excellent episodes) at flat overall correlation.</div></div>
       <div class="stat"><div class="big"><span class="accent">15+27</span></div><div class="lbl">Real G1 clips (15) + cross-simulator clips (27), all scored in the correct band, zero parse failures — with regime ordering (clean walk 4.8 > crawl 4.0), not mode collapse. Transfer without collapse at n=15; real negatives are future work.</div></div>
-      <div class="stat"><div class="big">5% <span class="accent">→ 39%</span></div><div class="lbl">Held-out success, hand-crafted baseline → critic-shaped policy (oracle upper bound: 53%). The learned reward recovers ~71% of privileged shaping.</div></div>
+      <div class="stat"><div class="big">5% <span class="accent">→ 39%</span></div><div class="lbl">Held-out success, hand-crafted baseline → critic-shaped policy (oracle upper bound: 53%; kinematic env). The learned reward recovers ~71% of privileged shaping.</div></div>
+      <div class="stat"><div class="big">0.36 <span class="accent">vs 0.24</span></div><div class="lbl"><b>Under real contact physics</b> (first seed): critic-shaped 0.36 success / zero falls vs privileged oracle 0.24 / 11% falls and baseline 0.20. The privileged reward can't see balance; the video critic can. Multi-seed replication running.</div></div>
     </div>
     <figure style="margin-top:26px">
       <img src="assets/fig4_arms.png" alt="Three-arm comparison: baseline vs critic-shaped vs oracle">
