@@ -1,47 +1,46 @@
-# The World Model as Judge
+# Do Video-Language Models Make Good Traversal Judges?
 
-**Learned traversal rewards for humanoid navigation in cluttered, occupied indoor spaces.**
+**Privileged-to-visual reward distillation for humanoid navigation — a controlled study.**
 
-> We turn a video world model into a **judge** — not a simulator, not a policy — and use it
-> as the reward model for training humanoid navigation in cluttered, occupied indoor spaces.
+> We fine-tune a compact (2B) video-language model into a **traversal judge** for humanoid
+> navigation clips, and run the three controls VLM-reward papers usually skip: the
+> **privileged teacher** that made the labels (as its own reward arm), a **ridge probe on the
+> judge's own frozen vision tower**, and a **preregistered 3-seed × 3-arm policy test** under
+> MuJoCo contact physics. The judge is training-time only — it never deploys.
 
 🌐 **[Project page](https://linjiw.github.io/traversal-critic/)** ·
-📄 **[Draft paper (PDF)](paper/draft.pdf)** ·
-🗒️ **[Pitch kit](paper/pitch.md)**
-
-## The idea
-
-Humanoids can walk — but they can't cross a cluttered living room with people in it,
-because nobody can *write down the reward* for "squeeze through that gap politely, duck
-under the table, don't crowd the person." We fine-tune a compact (2B) video-language world
-model (Cosmos3-Edge) into a **traversal critic** that scores rollout clips 1–5 on collision
-safety, clearance, motion quality, and social compliance — supervised entirely by privileged
-simulator state (no human labels) — and use it as reward shaping for a small vision policy
-over a frozen GEAR-SONIC whole-body controller. The world model **never deploys**.
+📄 **[Current draft](paper/draft.md)** ·
+🗄️ **[Historical PDF (Aug 7, pre-v5)](paper/draft.pdf)**
 
 ![system](assets/fig1_system.png)
 
-## Results so far
+## Findings so far (clean v5 reproduction, evidence-gated)
 
-| claim | number |
+| What | Result |
 |---|---|
-| Fine-tuning extracts signal from pixels | Pearson **0.148** near-base → **0.534** best critic (one fixed 590-clip held-out-scene yardstick, strictly monotone across interventions) |
-| Balancing fixes the rare scores | GT-1/GT-5 recall roughly **doubles** |
-| **Critic shaping works** | held-out success: baseline **5%** → critic-shaped **39%** (oracle upper bound 53%) — kinematic env; physics rerun in flight |
-| It transfers to real robot video | **15 real G1 clips** + 27 cross-sim: 0 parse failures, all in the correct band (transfer without collapse; no real negatives yet) |
-| Hand-crafted rewards fail measurably | baseline PPO overfits: 0.51 train success → 0.05 held-out |
+| Data | 2,000 audited contact-physics rollouts, 500 procedural scenes, deterministic four-axis rubric, scene-disjoint 1,568/432 split, zero human annotations |
+| Fine-tuned 2B critic | r = 0.565 on 432 held-out clips (only checkpoint with zero invalid outputs); later checkpoints reach r = 0.705 but emit 1–2 invalid digits |
+| Frozen-tower ridge probe | **r = 0.705** on the same validation set — no autoregressive tuning at all |
+| Domain shift (42 real + cross-sim clips) | Critic stays in [1,5] but misorders impaired gait; probe restores ordering but leaves the range — each readout fails a different criterion; corpus has no adverse events, so no transfer claim |
+| Policy test | 3 seeds × {hand-crafted, privileged, critic} × 300,032 PPO steps under contact physics — **running; no policy-benefit claim yet** |
 
-![scaling](assets/fig2_scaling.png)
+**The diagnosis so far:** the traversal signal survives the frozen vision tower;
+the generative digit interface is where quality is lost.
 
-## Repository layout
+Earlier development results (v1–v4 critics, kinematic policy pilots, single-seed physics
+pilots) are preserved as history in the paper's appendix and support **no** claims.
 
-This repo hosts the project page and paper. The full implementation (rollout generator,
-auto-labeler, critic SFT recipes, eval sweeps, PPO trainer, async scorer daemon) lives on
-the `feat/traversal-critic` branch of our cosmos-framework fork — see the paper's
-reproducibility section.
+## What this repo is
+
+The public project page and paper draft. The research codebase (simulator harness,
+labeler, SFT recipes, PPO trainer, audit chain) will be released with the paper.
 
 ## Acknowledgments
 
-Built on [Cosmos3](https://github.com/nvidia-cosmos/cosmos-framework) (world model) and
-[GEAR-SONIC / GR00T-WholeBodyControl](https://github.com/NVlabs/GR00T-WholeBodyControl)
-(whole-body control). Real-robot footage in Fig. 6 is from the GEAR-SONIC release media.
+Built on [Cosmos3](https://github.com/nvidia-cosmos/cosmos-framework) (video-language
+model) and [GEAR-SONIC / GR00T-WholeBodyControl](https://github.com/NVlabs/GR00T-WholeBodyControl)
+(whole-body control). Real-robot footage is from the GEAR-SONIC release media.
+
+Target venue: ICRA 2027 (RA-L/ICLR fallback). Draft claims are evidence-gated: the
+policy-comparison sections stay claim-free until the preregistered matrix and held-out
+analyses close.

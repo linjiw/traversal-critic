@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The World Model as Judge — Learned Traversal Rewards for Humanoid Navigation</title>
-<meta name="description" content="We turn a video world model into a judge — not a simulator, not a policy — and use it as the reward model for training humanoid navigation in cluttered, occupied indoor spaces.">
+<title>Do Video-Language Models Make Good Traversal Judges? — The Traversal Critic Project</title>
+<meta name="description" content="A controlled study of a video-language model as a reward judge for humanoid navigation: privileged-to-visual reward distillation with the three controls VLM-reward papers usually skip — the privileged teacher, a frozen-feature probe, and a preregistered policy test.">
 <style>
 :root {
   color-scheme: light;
@@ -16,8 +16,10 @@
 body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--ink); line-height: 1.55; }
 .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
 header.hero { background: var(--surface); border-bottom: 1px solid var(--line); padding: 56px 0 40px; text-align: center; }
-h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 10px; }
-.subtitle { font-size: 1.15rem; color: var(--ink-2); max-width: 760px; margin: 0 auto 18px; }
+.overtitle { font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+h1 { font-size: 2.05rem; line-height: 1.2; margin: 0 0 10px; }
+.subtitle { font-size: 1.12rem; color: var(--ink-2); max-width: 800px; margin: 0 auto 18px; }
+.statusline { display: inline-block; background: #eef4fd; border: 1px solid #c9dcf5; color: #1c4e8f; border-radius: 999px; padding: 6px 16px; font-size: 0.9rem; font-weight: 600; }
 .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
 .badge { display: inline-block; padding: 8px 18px; border-radius: 999px; border: 1.5px solid var(--ink); text-decoration: none; color: var(--ink); font-weight: 600; font-size: 0.95rem; }
 .badge.primary { background: var(--ink); color: #fff; }
@@ -25,7 +27,7 @@ h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 10px; }
 section { padding: 44px 0; }
 section.alt { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 h2 { font-size: 1.5rem; margin: 0 0 6px; }
-.lead { color: var(--ink-2); margin: 0 0 24px; max-width: 820px; }
+.lead { color: var(--ink-2); margin: 0 0 24px; max-width: 840px; }
 figure { margin: 18px 0; }
 figure img { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
@@ -40,36 +42,62 @@ figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
 .tag.good { background: #e3f6ee; color: #0b6e4a; }
 .tag.mid { background: #fdf1ea; color: #b34a1a; }
 .tag.bad { background: #fdeaea; color: #a32222; }
-.numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 20px; }
-@media (max-width: 860px) { .numbers { grid-template-columns: repeat(2, 1fr); } }
+.numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+@media (max-width: 860px) { .numbers { grid-template-columns: 1fr; } }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; }
-.stat .big { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.stat .big { font-size: 1.75rem; font-weight: 700; line-height: 1.15; }
 .stat .big .accent { color: var(--accent); }
 .stat .lbl { font-size: 0.85rem; color: var(--ink-2); margin-top: 6px; }
+.controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
+@media (max-width: 760px) { .controls { grid-template-columns: 1fr; } }
+.control { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 12px; padding: 16px 18px; }
+.control b { display: block; margin-bottom: 6px; font-size: 1.02rem; }
+.control p { margin: 0; font-size: 0.9rem; color: var(--ink-2); }
 .story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
 @media (max-width: 760px) { .story { grid-template-columns: 1fr; } }
 .move { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; }
 .move b { display: block; margin-bottom: 4px; }
 .move p { margin: 0; font-size: 0.92rem; color: var(--ink-2); }
-.pitch { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent-2); border-radius: 10px; padding: 18px 22px; font-size: 1.02rem; max-width: 860px; margin: 0 auto; }
+.pitch { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent-2); border-radius: 10px; padding: 18px 22px; font-size: 1.02rem; max-width: 880px; margin: 0 auto; }
+.noclaim { background: #fdf6ec; border: 1px solid #e8d9bd; border-radius: 10px; padding: 16px 22px; font-size: 0.94rem; color: #6b5518; max-width: 880px; }
+.noclaim ul { margin: 8px 0 0; padding-left: 20px; }
+.noclaim li { margin-bottom: 4px; }
+.timeline { list-style: none; margin: 12px 0 0; padding: 0; max-width: 860px; }
+.timeline li { position: relative; padding: 0 0 22px 28px; border-left: 2px solid var(--line); margin-left: 8px; }
+.timeline li:last-child { border-left-color: transparent; }
+.timeline li::before { content: ""; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.timeline li.done::before { background: var(--good); }
+.timeline li.now::before { background: var(--accent-2); }
+.timeline .when { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.timeline b { display: block; }
+.timeline p { margin: 2px 0 0; font-size: 0.92rem; color: var(--ink-2); }
 footer { padding: 34px 0 50px; color: var(--muted); font-size: 0.85rem; text-align: center; }
 a { color: var(--accent); }
 .paperbox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px 26px; }
 .paperbox h3 { margin-top: 0; }
 .abstract { font-size: 0.95rem; color: var(--ink-2); }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+@media (max-width: 700px) { .vs { grid-template-columns: 1fr; } }
+.vscol { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.vscol h3 { margin: 0 0 8px; font-size: 1rem; }
+.vscol .r { font-size: 1.6rem; font-weight: 700; }
+.vscol ul { margin: 8px 0 0; padding-left: 18px; font-size: 0.88rem; color: var(--ink-2); }
+.vscol li { margin-bottom: 4px; }
 </style>
 </head>
 <body>
 
 <header class="hero">
   <div class="wrap">
-    <h1>The World Model as Judge</h1>
-    <p class="subtitle">Toward humanoid navigation in cluttered, occupied indoor spaces: a video world model scores the robot's behavior at training time — and never deploys. Current stage: the learned judge works; physics-in-the-loop training is next.</p>
+    <div class="overtitle">The Traversal Critic Project</div>
+    <h1>Do Video-Language Models Make Good Traversal Judges?</h1>
+    <p class="subtitle">Privileged-to-visual reward distillation for humanoid navigation — a controlled study that runs the three controls VLM-reward papers usually skip: the <b>privileged teacher</b>, a <b>frozen-feature probe</b>, and a <b>preregistered policy test</b>.</p>
+    <div class="statusline">⏳ Status (Aug 2026): 3-seed × 3-arm contact-physics PPO matrix running — the policy verdict is preregistered and pending. No policy-benefit claim is made yet.</div>
     <div class="badges">
-      <a class="badge primary" href="paper/draft.pdf">📄 Paper (draft PDF)</a>
-      <a class="badge" href="https://github.com/linjiw/traversal-critic" id="code-link">💻 Code</a>
-      <a class="badge" href="#approach">🧭 Approach</a>
-      <a class="badge" href="#results">📈 Results</a>
+      <a class="badge primary" href="https://github.com/linjiw/traversal-critic/blob/main/paper/draft.md">📄 Current draft</a>
+      <a class="badge" href="paper/draft.pdf">🗄️ PDF (Aug 7, pre-v5)</a>
+      <a class="badge" href="#findings">📈 Findings so far</a>
+      <a class="badge" href="#progress">🧪 Progress</a>
     </div>
   </div>
 </header>
@@ -77,38 +105,47 @@ a { color: var(--accent); }
 <section>
   <div class="wrap">
     <div class="pitch">
-      <b>In 30 seconds:</b> Humanoids can walk now — but they still can't cross a cluttered living room with people in it. The blocker isn't balance; it's that nobody can <i>write down the reward</i> for "squeeze through that gap politely, duck under the table, don't crowd the person." So we don't write it — we <b>learn it from a video foundation model</b>. We fine-tune a video-language world model into a <b>traversal critic</b> that watches a rollout clip and scores it 1–5, then use that score as the reward for training a small navigation policy over a frozen whole-body controller. Nothing big deploys on the robot — and the critic's judgment transfers to real robot video.
-    </div>
-    <div style="max-width:860px;margin:16px auto 0;padding:12px 18px;background:#fdf6ec;border:1px solid #e8d9bd;border-radius:10px;font-size:0.92rem;color:#6b5518">
-      <b>Scope, honestly:</b> the policy results below are from a <b>kinematic simulator</b> (playback of a pretrained motion planner — no contact physics). The measured contribution today is the <b>critic</b> (a learned judge of traversal quality, r&nbsp;=&nbsp;0.53 on held-out scenes, ~71% of oracle shaping recovered). The <i>robot</i> capability — actually walking across cluttered, narrow homes — is the <b>goal</b>, not the current status: our best policy reaches 39% held-out success in this simplified setting. <b>Update (Aug 5):</b> a physics-in-the-loop harness is now running — the full SONIC control stack (motion-token encoder/decoder → PD torques) under real MuJoCo contact dynamics; the demos below marked <i>physics</i> use it, and the three-arm reward comparison is being re-run under physics.
+      <b>In 30 seconds:</b> Everyone is starting to use video-language models as reward judges for robots — and almost everyone validates them the same way: correlation with labels on held-out clips. We ask the harder questions. If a privileged simulator rubric made your labels, how much does the judge lose relative to that teacher? Does the fine-tuned 2B judge even beat a <i>ridge regression on its own frozen vision features</i>? And does any of it move a real policy? We fine-tune Cosmos3-Edge (2B) into a 1–5 <b>traversal critic</b> for humanoid navigation clips, then run all three controls under MuJoCo contact physics with a frozen GEAR-SONIC whole-body controller on a Unitree G1. The answers so far are not what the headline-correlation methodology would report — and that is the point.
     </div>
   </div>
 </section>
 
-<section class="alt" id="approach">
+<section class="alt">
+  <div class="wrap">
+    <h2>The three controls</h2>
+    <p class="lead">Each one changes what the evidence means. Together they decide whether the <i>judge</i> — rather than its labels or its backbone — deserves the credit.</p>
+    <div class="controls">
+      <div class="control"><b>1 · The privileged teacher, as a reward arm</b><p>The deterministic rubric that generated the training labels also runs as its own reward-shaping arm ("oracle"). Whatever the visual judge achieves is measured against direct access to its teacher — the proxy-vs-gold comparison of reward-overoptimization studies, run in the loop.</p></div>
+      <div class="control"><b>2 · A probe of the judge's own frozen features</b><p>A media-grouped ridge probe on the critic's <i>own frozen SigLIP2 vision tower</i> asks: did autoregressive fine-tuning add anything beyond the pretrained representation? (Spoiler: in-domain, it didn't.)</p></div>
+      <div class="control"><b>3 · A preregistered policy matrix</b><p>3 seeds × 3 reward arms (hand-crafted / privileged / critic) × 300,032 PPO steps under contact physics, with frozen selection rules, ≥90% audited reward-coverage requirements, and decision gates written down before any endpoint exists.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="approach">
   <div class="wrap">
     <h2>The approach: judge, not simulator, not policy</h2>
-    <p class="lead">Video world models are used as <b>simulators</b> (imagine futures) or <b>policies</b> (VLAs) — both fight the models' weakness (long-horizon generation) and put billions of parameters near the control loop. We use the third option: <b>judging</b>, which is one forward pass, asynchronous, and training-time only.</p>
+    <p class="lead">Video foundation models are used as <b>simulators</b> (imagine futures) or <b>policies</b> (VLAs) — both fight the models' weakness and put billions of parameters near the control loop. We use the third option: <b>judging</b> a completed clip is one forward pass, asynchronous, and training-time only. Nothing large ever deploys: the only learned component on the robot side is a 0.43M-parameter navigation policy at ~3.3 Hz commanding the frozen 50 Hz whole-body controller.</p>
     <figure>
       <img src="assets/fig1_system.png" alt="System architecture: training loop with critic vs deployment stack">
-      <figcaption>Three layers. A frozen GEAR-SONIC whole-body controller (50 Hz) handles walking, crouching, crawling. A small vision policy (~0.5M params, 3 Hz) picks heading, speed, and posture mode. The 2B-parameter critic exists only on the training side — the only thing that crosses to the robot is the small policy.</figcaption>
+      <figcaption>Three layers. A frozen GEAR-SONIC whole-body controller (50 Hz) handles walking, crouching, crawling. A small vision policy (~0.43M params, 3.3 Hz) picks heading, speed, and posture mode. The 2B critic exists only on the training side, scoring completed episode clips through an audited asynchronous queue.</figcaption>
     </figure>
     <div class="story">
-      <div class="move"><b>1 — The problem is the reward.</b><p>Traversal quality in occupied clutter is perceptual and unwritable. Our own hand-crafted baseline reward silently collapsed PPO to standing still — the exact brittleness we're removing.</p></div>
-      <div class="move"><b>2 — Judging fits the model.</b><p>Recognition is easier than generation. Scoring "was that safe and natural?" takes one VLM pass over a short clip, not thirty diffusion steps per imagined frame.</p></div>
-      <div class="move"><b>3 — Supervision is free.</b><p>Privileged simulator state (clearance, contacts, person distance) converts to ordinal labels deterministically. ~6,000 clips labeled, zero human annotations — and the critic generalizes the judgment to pixels.</p></div>
+      <div class="move"><b>1 — The problem is the reward.</b><p>Traversal quality in occupied clutter — squeeze the gap with margin, duck the table, don't crowd the person — is perceptual and hard to write down. Community evaluations of social navigation reach the same conclusion: quality metrics are unsolved.</p></div>
+      <div class="move"><b>2 — Supervision is free in sim.</b><p>Privileged simulator state (clearance, contacts, person distance, progress) converts to four-axis ordinal labels deterministically. 2,000 audited contact-physics rollouts, zero human annotations, scene-disjoint 1,568/432 split.</p></div>
+      <div class="move"><b>3 — The judge matters only where the state is absent.</b><p>Inside the simulator the privileged score is strictly better. A learned visual judge earns its keep only if the rubric survives transfer to pixels — RGB logs, real-robot video, other simulators. That transfer is exactly what the controls measure.</p></div>
     </div>
   </div>
 </section>
 
-<section>
+<section class="alt">
   <div class="wrap">
     <h2>What the critic learns to judge</h2>
-    <p class="lead">Procedurally generated cluttered houses — narrow doorway gaps (0.6–1.2 m), low tables, furniture, moving people — traversed by scripted policies spanning five quality bands. The auto-labeler scores each episode on safety, clearance, motion quality, and social compliance, with safety as a hard ceiling.</p>
+    <p class="lead">Procedurally generated cluttered indoor scenes — narrow doorway gaps (0.6–1.2 m), low tables, furniture, moving people — traversed by scripted drivers spanning five quality bands. The auto-labeler scores each episode on safety, clearance, social distance, and progress, with safety as a hard ceiling.</p>
     <div class="grid3">
       <div class="card">
         <img src="assets/rollout_good.gif" alt="Clean traversal rollout">
-        <div class="pad"><span class="tag good">score 5 — clean clip</span><h3>Collision-free, brisk approach</h3><p>Routes through gap centers with margin. Note: the score rates the <i>clip's</i> quality — this episode ends at the 8&nbsp;s clip budget before reaching the goal.</p></div>
+        <div class="pad"><span class="tag good">score 5 — clean clip</span><h3>Collision-free, brisk approach</h3><p>Routes through gap centers with margin. The score rates the <i>clip's</i> quality under the rubric.</p></div>
       </div>
       <div class="card">
         <img src="assets/rollout_skim.gif" alt="Skimming traversal rollout">
@@ -116,60 +153,93 @@ a { color: var(--accent); }
       </div>
       <div class="card">
         <img src="assets/rollout_bad.gif" alt="Unsafe traversal rollout">
-        <div class="pad"><span class="tag bad">score 1 — unsafe</span><h3>Walks through a person</h3><p>The violation here is 23 frames of person-contact (the capsule), not furniture impact — safety is a hard ceiling, so the score is 1 regardless of other axes.</p></div>
+        <div class="pad"><span class="tag bad">score 1 — unsafe</span><h3>Walks through a person</h3><p>Safety is a hard ceiling: any person contact or fall caps the overall score at 1 regardless of other axes.</p></div>
       </div>
     </div>
     <figure style="margin-top:26px">
       <img src="assets/fig3_qualitative.png" alt="One episode per ground truth score">
-      <figcaption>One episode per ground-truth score, frames left to right in time (early-generation camera shown; later data uses an above-wall chase view after we found and fixed an occlusion confound).</figcaption>
+      <figcaption>One episode per ground-truth score, frames left to right in time (development-generation camera shown; the clean v5 reproduction uses a third-person chase view).</figcaption>
     </figure>
 
-    <h2 style="margin-top:40px">New: real contact dynamics (physics-in-the-loop)</h2>
-    <p class="lead">The full released SONIC stack — kinematic planner → motion-token encoder → decoder → PD torques — now runs under MuJoCo contact physics in our cluttered scenes. Clutter pushes back, falls are real, and the mode decision (walk vs. crawl) has physical consequences. These clips are <b>scripted routes with a fixed mode rule</b>, not the learned policy: they demonstrate the environment and control stack, and are the substrate the reward-learning comparison is being re-run on.</p>
+    <h2 style="margin-top:40px">Real contact dynamics, real consequences</h2>
+    <p class="lead">The full released SONIC stack — planner → motion-token encoder → decoder → PD torques — runs under MuJoCo contact physics in our cluttered scenes. Clutter pushes back, falls are real, and the mode decision (walk vs. crawl) has physical consequences. These clips are <b>scripted routes</b>, not the learned policy: they demonstrate the environment and control substrate that the reward-arm comparison runs on.</p>
     <div class="grid3">
       <div class="card">
         <img src="assets/physics_gap_walk.gif" alt="Physics walk through narrow gap">
-        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Narrow-gap walk under contact dynamics</h3><p>Held-out scene, 0.8&nbsp;m doorway. Success with 0.5 contact-seconds; the controller absorbs a doorframe brush instead of the pose being teleported past it.</p></div>
+        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Narrow-gap walk under contact dynamics</h3><p>Held-out scene, 0.8 m doorway. The controller absorbs a doorframe brush instead of the pose being teleported past it.</p></div>
       </div>
       <div class="card">
         <img src="assets/physics_crawl_table.gif" alt="Physics crawl under low table">
-        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Hand-crawl under a 1.19&nbsp;m table</h3><p>Walks two gaps, drops to hand-crawl, passes <i>under</i> the tabletop (0.42 contact-seconds), reaches the goal. Under kinematic playback this scene was an unresolvable stall.</p></div>
+        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Hand-crawl under a 1.19 m table</h3><p>Walks two gaps, drops to hand-crawl, passes <i>under</i> the tabletop, reaches the goal.</p></div>
       </div>
       <div class="card">
         <img src="assets/physics_yield_person.gif" alt="Physics yield to crossing person then crawl">
-        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Yield to the person, then crawl</h3><p>Stops while the person crosses, resumes, drops under the table, reaches the goal. But the same naive stop-when-close rule only gets <b>25% success over 100 held-out scenes</b> (47% person collisions: it stops <i>in the person's lane</i> or deadlocks) — when and where to yield is perceptual, and that's the decision the critic-shaped policy is being trained to make.</p></div>
+        <div class="pad"><span class="tag good">physics — scripted route</span><h3>Yield to the person, then crawl</h3><p>A naive stop-when-close rule deadlocks or stops in the person's lane in most held-out scenes — when and where to yield is perceptual. That decision is what the trained policy must learn.</p></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="alt" id="results">
+<section id="findings">
   <div class="wrap">
-    <h2>Results so far</h2>
-    <p class="lead">Everything is evaluated on <b>held-out scenes</b> — novel layouts, gap widths, furniture, and appearance the critic never trained on.</p>
-    <div class="numbers">
-      <div class="stat"><div class="big">0.02 <span class="accent">→ 0.53</span></div><div class="lbl">Pearson r vs. ground truth, zero-shot → fine-tuned (clean-camera v4). The base model has no signal; training extracts it from pixels alone.</div></div>
-      <div class="stat"><div class="big"><span class="accent">2×</span></div><div class="lbl">Rare-score recall after class balancing (dangerous and excellent episodes) at flat overall correlation.</div></div>
-      <div class="stat"><div class="big"><span class="accent">15+27</span></div><div class="lbl">Real G1 clips (15) + cross-simulator clips (27), all scored in the correct band, zero parse failures — with regime ordering (clean walk 4.8 > crawl 4.0), not mode collapse. Transfer without collapse at n=15; real negatives are future work.</div></div>
-      <div class="stat"><div class="big">5% <span class="accent">→ 39%</span></div><div class="lbl">Held-out success, hand-crafted baseline → critic-shaped policy (oracle upper bound: 53%; kinematic env). The learned reward recovers ~71% of privileged shaping.</div></div>
-      <div class="stat"><div class="big">0.36 <span class="accent">vs 0.24</span></div><div class="lbl"><b>Under real contact physics</b> (first seed): critic-shaped 0.36 success / zero falls vs privileged oracle 0.24 / 11% falls and baseline 0.20. The privileged reward can't see balance; the video critic can. Multi-seed replication running.</div></div>
+    <h2>Findings so far <span style="font-size:0.85rem;color:var(--muted);font-weight:400">(clean v5 reproduction, evidence-gated)</span></h2>
+    <p class="lead">Everything below comes from the audited v5 protocol: 2,000 labeler-v3 contact-physics rollouts, scene-disjoint validation, frozen selection rules, machine-checked provenance. Earlier development results (v1–v4, kinematic pilots, single-seed physics pilots) are preserved as history and support <b>no</b> claims.</p>
+
+    <div class="vs">
+      <div class="vscol">
+        <h3>Fine-tuned 2B critic (autoregressive digit)</h3>
+        <div class="r">r = 0.565</div>
+        <ul>
+          <li>Only checkpoint with valid outputs on all 432 scene-disjoint validation clips (iteration 100 of 800).</li>
+          <li>Later checkpoints rank better — up to r = 0.705 — but each emits 1–2 invalid generations.</li>
+          <li>OOD: all 42 outputs stay in [1,5], but impaired gait (n=1) scores <i>above</i> the clean-walk mean — the ordering test fails.</li>
+        </ul>
+      </div>
+      <div class="vscol">
+        <h3>Ridge probe on the same frozen vision tower</h3>
+        <div class="r">r = 0.705</div>
+        <ul>
+          <li>Media-grouped weighted ridge on frozen SigLIP2 features — no autoregressive tuning at all.</li>
+          <li>OOD: restores the impaired-below-clean ordering the critic loses…</li>
+          <li>…but 8/42 unclipped predictions fall outside the 1–5 range. Each readout fails a different criterion.</li>
+        </ul>
+      </div>
     </div>
-    <figure style="margin-top:26px">
-      <img src="assets/fig4_arms.png" alt="Three-arm comparison: baseline vs critic-shaped vs oracle">
-      <figcaption><b>The headline result.</b> With identical PPO, seeds, and scenes, critic-shaped policies reach 39% held-out success vs 5% for the hand-crafted baseline — recovering ~71% of what an oracle with privileged-state access achieves (53%). The pixels-only reward preserves most of its supervision's value.</figcaption>
-    </figure>
-    <figure>
-      <img src="assets/fig2_scaling.png" alt="Critic scaling curve">
-      <figcaption>The critic scales: quality prediction on held-out scenes improves monotonically with training clips, on progressively larger and harder validation sets.</figcaption>
-    </figure>
-    <figure>
-      <img src="assets/fig6_real_transfer.png" alt="Real robot video transfer">
-      <figcaption>The sim-trained critic scores real GEAR-SONIC release footage of a Unitree G1: every clip lands in the expected (collision-free) band with genuine ordering — clean walking 4.80 (8/10 fives) above crawling 4.00 — and a different-simulator control behaves consistently.</figcaption>
-    </figure>
-    <figure>
-      <img src="assets/fig5_confusion.png" alt="Class balancing ablation confusion matrices">
-      <figcaption>Class balancing recovers the rare scores: recall on dangerous (1) and excellent (5) episodes roughly doubles — the right trade for a reward model, where mistaking a dangerous episode for a good one is the costly error.</figcaption>
-    </figure>
+    <p class="lead" style="margin-top:18px"><b>The diagnosis:</b> the traversal signal survives the frozen vision tower; the generative digit interface is where quality is lost. Convergent 2026 results in other domains (probing-beats-generation for geometry, token-probability rewards, representation-driven visual scoring) point the same way — ours is the controlled, same-backbone version of that comparison, carried through to an RL reward.</p>
+
+    <div class="numbers">
+      <div class="stat"><div class="big">2,000 <span class="accent">/ 500</span></div><div class="lbl">Audited contact-physics rollouts / procedural scenes, labeled by the deterministic four-axis rubric; scene-hash 1,568/432 train/validation split; zero human annotations.</div></div>
+      <div class="stat"><div class="big">42 <span class="accent">OOD clips</span></div><div class="lbl">15 real Unitree G1 clips + 27 cross-simulator clips. No collision or fall examples exist in this corpus, so it cannot certify adverse-event judgment — we say so, rather than claim transfer.</div></div>
+      <div class="stat"><div class="big">9 × <span class="accent">300,032</span></div><div class="lbl">PPO runs × steps in the preregistered matrix (3 seeds × hand-crafted / privileged / critic arms), with ~13,700 audited critic scorings at ≥99.9% coverage so far. Verdict pending.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>What we do <i>not</i> claim (yet)</h2>
+    <div class="noclaim">
+      This project's credibility rests on saying exactly what the evidence supports. As of August 2026:
+      <ul>
+        <li><b>No policy-benefit claim.</b> Whether critic shaping beats the hand-crafted baseline — and how it compares to its privileged teacher — is decided by the preregistered matrix now running, not by correlation.</li>
+        <li><b>No OOD calibration or transfer claim.</b> The critic stays in range but misorders impaired gait; the probe orders correctly but leaves the range; the corpus has no negatives.</li>
+        <li><b>No real-robot deployment claim.</b> All policy training is simulation with a third-person camera; real-robot video is used only to stress-test the judges.</li>
+        <li><b>No scaling or causal claim from development history.</b> v1–v4 and the single-seed pilots used different data, cameras, and selection — they motivated the protocol and prove nothing.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="progress">
+  <div class="wrap">
+    <h2>Progress</h2>
+    <ul class="timeline">
+      <li class="done"><span class="when">Jul 2026</span><b>Development generations v1–v4</b><p>Critic prototypes, kinematic policy pilots, camera/occlusion confound found and fixed, physics harness built and verified against the SONIC deployment spec. Preserved as history; not evidence.</p></li>
+      <li class="done"><span class="when">Early Aug 2026</span><b>Clean v5 reproduction, frozen and audited</b><p>2,000 contact-physics rollouts; single fixed-budget SFT run; frozen checkpoint-selection rule; frozen-tower probe control; OOD stress test; every artifact bound by machine-checked provenance and independent replay.</p></li>
+      <li class="done"><span class="when">Aug 2026</span><b>In-domain + OOD verdicts</b><p>Probe 0.705 vs critic 0.565 in-domain; two-sided OOD failure (bounded-vs-ordered); v4/v5 comparison declared unresolvable (missing yardstick); causal-balance intervention declared infeasible. All recorded as terminal results.</p></li>
+      <li class="now"><span class="when">Now</span><b>The decisive experiment</b><p>3-seed × 3-arm × 300,032-step contact-physics PPO matrix with audited asynchronous critic scoring. Then: frozen selection replay, 18 held-out evaluations, nested + crossed bootstrap analyses, and claim adjudication — all under rules written before any endpoint existed.</p></li>
+      <li><span class="when">Next</span><b>Registered follow-ups</b><p>Probe-shaped reward arm; constrained and level-token-probability (Q-Align-style) decoding comparison; scene-matched negative OOD examples; the onset-aligned readout-challenge factorial asking exactly where after the frozen tower the signal is lost.</p></li>
+    </ul>
   </div>
 </section>
 
@@ -177,17 +247,17 @@ a { color: var(--accent); }
   <div class="wrap">
     <h2>Paper</h2>
     <div class="paperbox">
-      <h3>The World Model as Judge: Learned Traversal Rewards for Humanoid Navigation in Cluttered, Occupied Spaces</h3>
-      <p class="abstract">Humanoid robots can walk, but they cannot yet traverse the narrow, cluttered, human-occupied spaces where they are meant to work. The obstacle is not low-level control but <b>reward specification</b>: behaviors such as turning shoulders through a tight gap, crouching under furniture, or yielding to a person resist hand-crafted reward engineering, and their quality is inherently perceptual. We propose using a <b>video-language world model as a learned reward model</b>. We fine-tune a compact (2B) video-language model into a <i>traversal critic</i> that scores short navigation clips on collision safety, clearance management, motion quality, and social compliance, supervised by privileged simulator state automatically converted to ordinal labels — no human annotation. The critic then provides reward shaping for training a lightweight vision-based navigation policy that commands a frozen, pretrained whole-body controller; the world model is used <b>at training time only</b>, leaving deployment unencumbered. On held-out scenes, the fine-tuned critic predicts ground-truth traversal quality from pixels alone (Pearson r = 0.53 vs. 0.15 near-base on a single fixed yardstick), improving monotonically with data scale, class balancing, and viewpoint quality, and transfers to real robot video without collapse (n=15 real clips, all positive).</p>
-      <p><a class="badge primary" href="paper/draft.pdf">Read the draft (PDF)</a> &nbsp; <a class="badge" href="paper/pitch.md">Pitch kit</a></p>
-      <p class="abstract" style="margin-bottom:0"><b>Status:</b> working draft. The critic-shaped vs. hand-crafted-reward policy comparison (the headline experiment) is running; targets ICRA / ICLR.</p>
+      <h3>Do Video-Language Models Make Good Traversal Judges? Privileged-to-Visual Reward Distillation for Humanoid Navigation</h3>
+      <p class="abstract">Video-language models (VLMs) are increasingly used as robot reward judges, yet they are typically validated by label correlation alone — without the privileged signal that supplied their labels, without a simple readout of their own frozen visual features, and without a policy-level test. We run all three controls in humanoid traversal. A deterministic simulator rubric labels 2,000 contact-physics rollouts, and a compact 2B VLM is fine-tuned to emit one ordinal score per clip. The controls change the story a headline correlation would tell: the only fully parseable checkpoint reaches Pearson r = 0.565 on scene-disjoint validation, later checkpoints rank better but emit invalid outputs, and a media-grouped ridge probe on the same frozen vision tower reaches r = 0.705 with no autoregressive tuning at all. Under visual domain shift, each readout fails a different criterion — the VLM is bounded but misorders impaired gait; the probe restores the ordering but leaves the ordinal range — and the corpus supports no adverse-event claim. The decisive test, a preregistered three-seed comparison of hand-crafted, privileged, and VLM-derived reward shaping under contact physics, is in progress; we make no policy-benefit claim.</p>
+      <p><a class="badge primary" href="https://github.com/linjiw/traversal-critic/blob/main/paper/draft.md">Read the current draft</a> &nbsp; <a class="badge" href="paper/draft.pdf">Historical PDF (Aug 7)</a></p>
+      <p class="abstract" style="margin-bottom:0"><b>Status:</b> working draft under an evidence-gate discipline — claims C1–C5 are materialized only after their gates close. Target venue: ICRA 2027 (RA-L/ICLR fallback). Research code will be released with the paper.</p>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    Built on <a href="https://github.com/nvidia-cosmos/cosmos-framework">Cosmos3</a> (world model) and <a href="https://github.com/NVlabs/GR00T-WholeBodyControl">GEAR-SONIC</a> (whole-body control). Real-robot footage in Fig. 6 is from the GEAR-SONIC release media.
+    Built on <a href="https://github.com/nvidia-cosmos/cosmos-framework">Cosmos3</a> (video-language model) and <a href="https://github.com/NVlabs/GR00T-WholeBodyControl">GEAR-SONIC</a> (whole-body control). Real-robot footage is from the GEAR-SONIC release media. Site updated Aug 11, 2026.
   </div>
 </footer>
 
