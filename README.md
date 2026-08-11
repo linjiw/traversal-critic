@@ -23,9 +23,13 @@
 | Frozen-tower ridge probe | **r = 0.705** on the same validation set — no autoregressive tuning at all |
 | Domain shift (42 real + cross-sim clips) | Critic stays in [1,5] but misorders impaired gait; probe restores ordering but leaves the range — each readout fails a different criterion; corpus has no adverse events, so no transfer claim |
 | Policy test | 3 seeds × {hand-crafted, privileged, critic} × 300,032 PPO steps under contact physics — **running; no policy-benefit claim yet** |
+| Interface audit (Aug 11) | **Failed**: SFT, validation, and policy scoring used different temporal interfaces (4 / 4–48 / 5–32 frames); a duration + terminal-frame shortcut reaches r = 0.683 — the in-domain numbers above are historical, and a matched-interface temporal-route × decoding factorial is preregistered |
 
 **The diagnosis so far:** the traversal signal survives the frozen vision tower;
-the generative digit interface is where quality is lost.
+the fine-tuned path loses quality to a combination of the generative digit
+interface and a mismatched temporal input path. How much genuinely *temporal*
+judgment any readout adds — beyond terminal appearance — is the open question
+the preregistered factorial answers next.
 
 Earlier development results (v1–v4 critics, kinematic policy pilots, single-seed physics
 pilots) are preserved as history in the paper's appendix and support **no** claims.

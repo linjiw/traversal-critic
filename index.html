@@ -193,6 +193,7 @@ a { color: var(--accent); }
           <li>Only checkpoint with valid outputs on all 432 scene-disjoint validation clips (iteration 100 of 800).</li>
           <li>Later checkpoints rank better — up to r = 0.705 — but each emits 1–2 invalid generations.</li>
           <li>OOD: all 42 outputs stay in [1,5], but impaired gait (n=1) scores <i>above</i> the clean-walk mean — the ordering test fails.</li>
+          <li><b>Interface audit (Aug 11):</b> training, validation, and policy scoring used <i>different</i> temporal interfaces (4 / 4–48 / 5–32 frames) — this number is historical, not a matched-interface estimate; a matched re-evaluation is preregistered.</li>
         </ul>
       </div>
       <div class="vscol">
@@ -205,7 +206,7 @@ a { color: var(--accent); }
         </ul>
       </div>
     </div>
-    <p class="lead" style="margin-top:18px"><b>The diagnosis:</b> the traversal signal survives the frozen vision tower; the generative digit interface is where quality is lost. Convergent 2026 results in other domains (probing-beats-generation for geometry, token-probability rewards, representation-driven visual scoring) point the same way — ours is the controlled, same-backbone version of that comparison, carried through to an RL reward.</p>
+    <p class="lead" style="margin-top:18px"><b>The diagnosis (evolving):</b> the traversal signal survives the frozen vision tower; the fine-tuned path loses quality to a <i>combination</i> of the generative digit interface and — as a release-blocking preprocessing audit found on Aug 11 — a mismatched temporal input path (the fine-tuned model effectively saw four frames per clip). A shortcut battery also finds the rubric labels largely recoverable from terminal appearance alone (duration + final 8×8 frame: r = 0.683, vs. shuffled-label control 0.04) — so the open question, now under a preregistered temporal-route × decoding-interface factorial, is how much genuinely <i>temporal</i> judgment any readout adds. The controls keep catching exactly the things headline correlations hide; that is the point of the study.</p>
 
     <div class="numbers">
       <div class="stat"><div class="big">2,000 <span class="accent">/ 500</span></div><div class="lbl">Audited contact-physics rollouts / procedural scenes, labeled by the deterministic four-axis rubric; scene-hash 1,568/432 train/validation split; zero human annotations.</div></div>
