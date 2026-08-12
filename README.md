@@ -24,12 +24,17 @@
 | Domain shift (42 real + cross-sim clips) | Critic stays in [1,5] but misorders impaired gait; probe restores ordering but leaves the range — each readout fails a different criterion; corpus has no adverse events, so no transfer claim |
 | Policy test | 3 seeds × {hand-crafted, privileged, critic} × 300,032 PPO steps under contact physics — **running; no policy-benefit claim yet** |
 | Interface audit (Aug 11) | **Failed**: SFT, validation, and policy scoring used different temporal interfaces (4 / 4–48 / 5–32 frames); a duration + terminal-frame shortcut reaches r = 0.683 — the in-domain numbers above are historical, and a matched-interface temporal-route × decoding factorial is preregistered |
+| Shortcut battery (Aug 12, preregistered → executed) | The label concentrates at the endpoint: terminal frame alone r = 0.666; first half of each clip only r = 0.44; masking the final 10% of frames drops the best masked readout to 0.574; shuffled-label control 0.010 |
 
 **The diagnosis so far:** the traversal signal survives the frozen vision tower;
 the fine-tuned path loses quality to a combination of the generative digit
-interface and a mismatched temporal input path. How much genuinely *temporal*
-judgment any readout adds — beyond terminal appearance — is the open question
-the preregistered factorial answers next.
+interface and a mismatched temporal input path. The preregistered 17-row
+shortcut battery has now bounded the label side: pre-outcome predictability is
+modest (r ≤ 0.44) and endpoint appearance dominates (r = 0.666–0.683), so the
+probe's 0.705 exceeds a low-resolution endpoint readout by only ~0.04. Whether
+any *model* readout uses more than the endpoint is the usage question the
+preregistered decoding factorial and the corrected-generation critic answer
+next.
 
 Earlier development results (v1–v4 critics, kinematic policy pilots, single-seed physics
 pilots) are preserved as history in the paper's appendix and support **no** claims.

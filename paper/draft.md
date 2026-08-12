@@ -20,10 +20,17 @@ correlation would tell. In-domain, the only checkpoint with valid outputs on
 all 432 scene-disjoint validation clips reaches Pearson r = 0.565; later
 checkpoints rank better (r = 0.705) but each emits one or two invalid
 generations, exposing a tension between ranking quality and output reliability
-under autoregressive digit decoding. A media-grouped ridge probe on the same
-frozen vision tower reaches r = 0.705 with no autoregressive tuning at all:
-the traversal signal survives the vision tower, and the generative readout is
-where quality is lost. Under visual domain shift (42 real-robot and
+under autoregressive digit decoding. A release-blocking preprocessing audit
+also finds that captured SFT, historical validation, and policy scoring used
+different temporal interfaces, so r = 0.565 is not a clean matched-interface
+estimate. A media-grouped ridge probe on the same
+frozen vision tower reaches r = 0.705 with no autoregressive tuning at all,
+while a preregistered 17-row shortcut battery recovers r = 0.683 from clip
+duration plus one terminal 8×8 frame yet only r = 0.44 from the first half of
+each clip: label-predictive signal survives the vision tower but concentrates
+at the endpoint, and where the fine-tuned path loses quality remains an open,
+preregistered question.
+Under visual domain shift (42 real-robot and
 separate-domain simulator clips), each readout fails a different criterion:
 the VLM remains within [1,5] but ranks impaired gait above clean walking,
 while the probe restores that ordering but places 8/42 unclipped predictions
@@ -32,8 +39,8 @@ fall examples, neither readout establishes robust transfer or calibration. The
 decisive test—a preregistered three-seed by three-arm PPO comparison of
 hand-crafted, privileged, and VLM-derived shaping under a fixed budget—is
 still in progress, so we make no policy-benefit claim. The current evidence
-supports a controlled privileged-to-visual diagnostic and a strong frozen
-representation—not an advantage for the fine-tuned autoregressive judge.
+supports a controlled privileged-to-visual diagnostic and a label-predictive
+frozen representation—not an advantage for the fine-tuned autoregressive judge.
 
 ---
 
@@ -101,9 +108,11 @@ historical name `oracle` for the privileged-labeler arm.
 2. **A representation–interface decomposition.** The only fully parseable VLM
    checkpoint reaches r = 0.565, whereas the frozen-tower ridge probe reaches
    r = 0.705. Later VLM checkpoints approach the probe's correlation but each
-   produces one or two invalid generations. The evidence localizes a failure
-   somewhere after the available frozen features, without claiming that
-   instruction tuning causally destroyed those features.
+   produces one or two invalid generations. Captured SFT also reduced the five
+   audited strata to four second-stage frames while validation and policy
+   scoring used different frame counts. The evidence therefore diagnoses a
+   combined temporal/readout interface problem; it does not localize a causal
+   failure to instruction tuning.
 3. **A two-sided domain-shift result.** Across 42 real-robot and
    separate-domain simulator clips, the VLM is bounded but fails
    impaired-versus-clean ordering; the probe restores the ordering but is
@@ -163,8 +172,8 @@ image pairs before fitting a reward model.
 [Eureka](https://arxiv.org/abs/2310.12931) instead have an LLM author reward
 code over privileged simulator state — privileged-rubric authoring rather than
 visual judging. Recent systems bring VLM rewards toward our domains:
-[Large Reward Models](https://arxiv.org/abs/2603.16065) fine-tune a VLM into an
-online reward engine for real-world manipulation RL,
+[Large Reward Models](https://arxiv.org/abs/2603.16065) generate online VLM
+rewards — process, completion, and temporal-contrastive — for manipulation RL,
 [MVR](https://arxiv.org/abs/2603.01694) shapes HumanoidBench locomotion with
 multi-view VLM video rewards, and
 [VLM-Social-Nav](https://arxiv.org/abs/2404.00210) scores candidate navigation
@@ -267,8 +276,9 @@ not, to our knowledge, via RL with a learned reward.
 [Collision-Free Humanoid Traversal](https://arxiv.org/abs/2601.16035) learns
 traversal of cluttered indoor scenes with a hand-designed humanoid–obstacle
 potential field and demonstrates real transfer, and
-[FocusNav](https://arxiv.org/abs/2601.12790) performs G1 local navigation with
-hand-crafted rewards; neither includes moving people or a learned reward.
+[FocusNav](https://arxiv.org/abs/2601.12790) performs G1 local navigation via
+spatial selective attention with waypoint guidance; neither includes moving
+people or, to our knowledge, a reward learned from video.
 [Habitat 3.0](https://arxiv.org/abs/2310.13724) provides humanoid simulation
 and social-navigation/rearrangement tasks,
 [SocNavGym](https://arxiv.org/abs/2304.14102) reports that data-driven social
@@ -351,11 +361,13 @@ rubric but no explicit goal location. Consequently, the progress target is only
 partly observable from the clip, creating a possible incentive to use duration
 or terminal-state correlates.
 
-The training data path strides 25-fps videos toward 2 fps and caps the result
-at 32 frames. Clips that exceed the cap are sampled uniformly across their
-duration. As discussed in §6, the recorded frame-rate metadata does not fully
-represent that second subsampling step, and the validation file-path decoder
-has not yet been shown to use identical temporal metadata.
+The intended training data path first strides 25-fps videos toward 2 fps and
+caps that intermediate list at 32 frames. The preregistered temporal-interface
+audit (2026-08-11) found, however, that the captured launch sampled that
+already sampled list a second time under defaulted 24-fps metadata, reducing
+every one of the five audited short/capped/success/fall/timeout clips to four
+second-stage frames. Section 4.4 reports the full three-interface finding and
+its consequences.
 
 **Decoding and selection.** Two details materially affect the result. First,
 generation-time reasoning is disabled because the critic is trained to emit a single digit. Second,
@@ -454,7 +466,9 @@ superiority from those aggregates.
 <!-- CLAIM_SLOT:C1:BEGIN -->
 The fixed-budget v5 run yields an iteration-100 checkpoint with zero parser
 failures and Pearson r = 0.565 on the scene-disjoint validation set used for
-checkpoint selection.
+checkpoint selection, but E5 shows that this historical file-path evaluation
+does not match the captured four-frame SFT or policy-scorer interface and is
+therefore not a clean matched-interface estimate.
 <!-- CLAIM_SLOT:C1:END -->
 
 This result comes from one SFT run and has no independent critic-training
@@ -475,9 +489,11 @@ the critic with the probe's rounded digit predictions for in-domain Pearson and
 retain continuous probe predictions for the OOD boundedness audit.
 
 This is a representation control, not a parameter- or input-matched competing
-model. The probe is order-invariant and uses 8 frames; the VLM can process an
-ordered sequence of up to 32. Its purpose is to test whether a simple readout of
-the available frozen features already explains the claimed traversal signal.
+model. The probe is order-invariant and uses 8 frames; the intended VLM route
+can accept an ordered sequence of up to 32, but the captured SFT route consumed
+four second-stage frames (§4.4). Its purpose is to test whether a
+simple readout of the available frozen features already explains the claimed
+traversal signal, not to provide a matched-input model comparison.
 
 The selected ridge probe (regularization 1000) reaches discrete r = 0.7053,
 exceeding the selected critic's r = 0.564556 on the same 432 validation clips.
@@ -491,11 +507,13 @@ label-predictive signal under this preprocessing, so total absence of such signa
 explanation for the critic's OOD failure. However, temporal mean and standard
 deviation are invariant to frame order. The probe therefore establishes neither
 temporal reasoning nor attention to robot motion; static scene, posture,
-duration, and terminal-state shortcuts remain viable explanations. The
-remaining hypotheses concern instruction tuning, the language/digit readout,
-calibration, and the adverse-event-deficient OOD distribution. Distinguishing
-them requires a new preregistered factorial readout and intervention study, not
-a causal conclusion from this control. Convergent evidence from other domains
+duration, and terminal-state shortcuts remain viable explanations, and §4.4
+quantifies how much of the label such shortcuts recover. The
+remaining hypotheses concern the temporal input interface, instruction tuning,
+the language/digit readout, calibration, and the adverse-event-deficient OOD
+distribution. Distinguishing them requires the preregistered factorial readout
+and shortcut-battery studies of §4.4, not a causal conclusion from this
+control. Convergent evidence from other domains
 makes the readout-bottleneck hypothesis the leading candidate — fine-tuning can
 distort pretrained features ([Kumar et al., 2022](https://arxiv.org/abs/2202.10054)),
 token-probability readouts outperform generated values for robot rewards
@@ -542,7 +560,152 @@ and no collision or fall discrimination is measured.
 A future study must collect scene-matched clean, collision, and naturally
 falling clips with onset-aligned prefixes before making either claim.
 
-### 4.4 Does critic shaping improve policy learning? *(registered test in progress)*
+### 4.4 Interface and shortcut audit
+
+A reward model is not only weights; it is weights behind an input interface.
+If training, validation, and deployment present different tensors for the same
+clip, a validation correlation measures a system that never runs and a
+deployed system that was never measured. Reward-judge validation in this
+literature is typically correlation-only (§2) and rarely checks this
+condition. We therefore preregistered a release-blocking interface audit (E5)
+requiring that the SFT training path, the historical validation path, and the
+policy-scorer path present the same temporal input interface—identical frame
+indices, timestamps, metadata, prompt tokens, and resulting pixel
+tensors—checked on deterministic short, capped, successful, falling, and
+timeout strata.
+
+The audit failed, and the mechanism is instructive. The captured SFT launch
+double-sampled its input: the dataflow first pre-sampled each MP4 toward 2 fps
+and at most 32 frames, and the captured processor then sampled that already
+sampled list a second time; because no explicit video metadata reached the
+processor, it silently defaulted to 24 fps and reduced every audited clip to
+four second-stage frames. Historical validation instead passed MP4 paths and
+selected 4–48 frames at 2 fps, and the policy scorer presents predecoded
+5–32-frame tensors with explicit metadata—three different temporal interfaces,
+with zero of the five audited strata matching on source indices, timestamps,
+prompt tokens, or pixel tensors. This is an executed audit, not a
+source-reading inference: it ran the real processor, tensors, and tokenizer,
+independently reproduced the evaluator's actual source indices, and
+byte-verified the four relevant preprocessing modules against the immutable
+SFT process capture. The amendment of record is
+`docs/reviews/e5_temporal_interface_amendment_2026-08-11.md`.
+
+A companion shortcut diagnostic then asked how much of the label a trivially
+shallow readout recovers on the unchanged scene-disjoint validation split.
+A same-day pilot (duration, terminal 8×8 RGB frame, both; classified post-hoc
+descriptive) motivated a 17-row battery that was prospectively frozen
+(`docs/reviews/shortcut_battery_extension_protocol_2026-08-11.md`) and then
+executed under that protocol (`autoresearch/run-260812-0034/`): ridge
+regressions with train-only, scene-grouped regularization selection, a
+media-fingerprint replay binding the corpus to the audited split (matched),
+and a sanity gate requiring the recomputed pilot rows to reproduce — they did,
+to full precision (duration+terminal r = 0.6827). All intervals are
+scene-clustered bootstrap over the 108 validation scenes and remain
+descriptive.
+
+| battery row (preregistered, executed 2026-08-12) | Pearson | 95% CI | Spearman |
+| --- | ---: | --- | ---: |
+| duration only | 0.269 | [0.178, 0.356] | 0.429 |
+| first frame only | 0.148 | [0.037, 0.257] | 0.134 |
+| terminal frame only | 0.666 | [0.605, 0.722] | 0.700 |
+| first + terminal | 0.650 | [0.579, 0.713] | 0.667 |
+| duration + terminal | 0.683 | [0.635, 0.730] | 0.782 |
+| duration + first + terminal | 0.674 | [0.616, 0.727] | 0.754 |
+| random single frame | 0.372 | [0.272, 0.461] | 0.378 |
+| onset prefix, first 25% of frames | 0.326 | [0.224, 0.424] | 0.325 |
+| onset prefix, first 50% of frames | 0.440 | [0.335, 0.535] | 0.449 |
+| endpoint-masked, last 10% removed | 0.574 | [0.495, 0.644] | 0.595 |
+| endpoint-masked, last 25% removed | 0.492 | [0.421, 0.560] | 0.551 |
+| shuffled frame order (first+terminal) | 0.642 | [0.583, 0.694] | 0.675 |
+| shuffled frame order (dur+first+term) | 0.658 | [0.614, 0.700] | 0.751 |
+| shuffled frame order (prefix 25%) | 0.237 | [0.142, 0.328] | 0.232 |
+| shuffled frame order (prefix 50%) | 0.322 | [0.216, 0.421] | 0.344 |
+| shuffled-label negative control | 0.010 | [−0.099, 0.121] | 0.010 |
+| selected v5 critic (historical, mismatched interface) | 0.565 | — | — |
+| frozen-tower probe (§4.2, reference) | 0.705 | — | — |
+
+The battery bounds the temporal structure of the label itself. Pre-outcome
+predictability is modest: the first quarter of a clip recovers r = 0.326 and
+the first half r = 0.440. The endpoint dominates: one terminal frame recovers
+r = 0.666, and removing just the final tenth of the frames drops the best
+masked readout to 0.574 (final quarter: 0.492). The signal is not scene
+identity — the first frame alone recovers only 0.148, and a random single
+frame 0.372. Frame order carries little for endpoint-anchored rows (shuffling
+costs ≤ 0.02) but measurably more for prefixes (0.326 → 0.237,
+0.440 → 0.322), so what pre-outcome signal exists is partly ordered-motion
+signal. Against these bounds, the frozen-tower probe's 0.705 exceeds the
+terminal-frame row by ≈ 0.04 Pearson with overlapping intervals — a small
+measured increment over low-resolution endpoint appearance — and the selected
+critic's historical 0.565 sits below every endpoint-bearing row while
+exceeding every endpoint-free row except the masked-10% row. These are
+descriptive comparisons of label recoverability, not usage claims about any
+model.
+
+Two caveats are mandatory, and we adopt them as binding. First, comparisons
+among these Pearson values are descriptive ratios, not variance-explained
+estimates. Second, recoverability is not usage: the endpoint probe outscoring
+the selected critic does not show that the VLM exploits terminal appearance;
+it shows that the label is highly predictable from terminal appearance even
+across scene-disjoint validation, which makes endpoint controls a necessary
+causal diagnostic rather than an optional one. Part of this recoverability is
+plausibly rubric-intrinsic—failed episodes end in fallen postures and
+successful ones end at the goal—which is exactly why prefix and
+endpoint-masked controls, not intuition, must quantify it. The near-zero
+shuffled-label control indicates that the diagnostic pipeline itself does not
+leak.
+
+The audit reclassifies three of this paper's numbers. The selected critic's
+r = 0.565 is historical mismatched-interface evidence—a file-path inference
+interface applied to a model trained through a different four-frame
+interface—and is no longer reported as a clean matched-interface estimate
+(C1 in §4.1 is worded accordingly). The probe's r = 0.705 must now be read
+against the 0.683 duration-plus-terminal reference: the temporal increment of
+any readout over endpoint appearance is the decisive quantity, for the probe
+as much as for the critic, and the battery above now bounds it for shallow
+readouts — whether any *model* readout uses more than the endpoint remains a
+usage question the factorial and corrected generation must answer. And the policy matrix (§4.5) retains its registered
+meaning only for the exact frozen historical system—the four-frame-trained
+iteration-100 checkpoint scored through the 5–32-frame predecoded interface;
+whatever its outcome, it cannot validate the intended 32-frame critic, which
+was never trained. An outcome-blind interpretation note frozen before any
+held-out endpoint existed
+(`docs/reviews/matrix_interpretation_note_outcome_blind_2026-08-11.md`)
+pre-commits the licensed reading of every registered outcome branch.
+
+The remaining preregistered instruments, all frozen before their results
+exist, are assigned to the open questions. A frozen
+2 temporal-route × 3 decoding-readout factorial
+evaluates all eight fixed-budget checkpoints under the historical file-path
+route and an SFT-exact route, each with free generation, first-score-token
+constrained decoding, and a Q-Align-style expected score over the five
+score-token probabilities
+([Q-Align](https://arxiv.org/abs/2312.17090);
+`docs/reviews/e1_amendment_expected_score_readout_2026-08-11.md`); no cell of
+that factorial has selection power over the frozen matrix critic. Finally, a
+corrected critic generation trained through a matched, tensor-audited
+temporal route is required and separately named; it is never mixed into v5
+tables, and replication of the unchanged recipe is explicitly disallowed as a
+repair because it would replicate the bug.
+
+We draw one methodological conclusion now, because it does not depend on any
+pending result. Each control reported in this paper caught something a
+headline correlation hides: parser eligibility caught invalid generations in
+seven of eight checkpoints (§4.1); the same-backbone probe caught a
+fine-tuned readout that, under the registered selection and decoding
+interface, does not improve on frozen features in-domain (§4.2); the
+domain-shift test caught a bounded but misordering judge (§4.3); the
+interface audit caught three different temporal interfaces between training,
+validation, and deployment; and the preregistered shortcut battery caught a
+label largely recoverable from terminal appearance and only modestly
+predictable before the outcome unfolds. The privileged oracle arm plays
+the same role for the pending policy matrix: if privileged labels themselves
+do not shape the policy, no judge distilling them can be credited or blamed
+for its distillation. We take this chain—oracle reference,
+frozen-representation probe, interface audit, shortcut battery—as the minimum
+answer to the title question: this is what it takes to trust a VLM reward
+judge, and none of it is visible in a validation correlation.
+
+### 4.5 Does critic shaping improve policy learning? *(registered test in progress)*
 
 This is the decisive experiment. Paired-seed PPO compares three reward arms
 under identical scenes, policy architecture, controller, and step budget:
@@ -601,7 +764,7 @@ retained as historical artifacts, explicitly outside the evidence of record.
 
 → `paper/figures/fig4_arms.svg`
 
-### 4.5 What a hand-crafted reward failure does—and does not—show
+### 4.6 What a hand-crafted reward failure does—and does not—show
 
 An early kinematic engineering run—not evidence of record—collapsed toward
 idling because its per-frame contact penalties could outweigh the maximum
@@ -611,12 +774,14 @@ motivates testing a holistic episode-level critic, but does not show that a
 learned reward is exploitation-proof; the registered held-out and coverage
 analyses are required to determine whether it improves the policy.
 
-### 4.6 Registered follow-up direction
+### 4.7 Registered follow-up direction
 
 After the current matrix is adjudicated, the registered follow-up studies
-critic checkpoint quality versus policy gain, λ sensitivity, constrained score
-decoding, scene-matched negative OOD examples, and the onset-aligned factorial
-readout/intervention design described in §6.
+critic checkpoint quality versus policy gain, λ sensitivity, and scene-matched
+negative OOD examples. The preregistered shortcut battery, decoding-readout
+factorial, and separately named corrected generation of §4.4 do not read or
+depend on the matrix outcome; the on-policy challenge-corpus design is
+described in §6.
 
 ---
 
@@ -713,9 +878,10 @@ score over level-token probabilities as in
 [Q-Align](https://arxiv.org/abs/2312.17090) — is a straightforward and
 important comparator: it may remove parse failures and change which checkpoint
 is preferable. We do not apply it retroactively because the output interface
-and checkpoint rule were frozen before this result. A follow-up should evaluate
-the same checkpoints under both free generation and constrained score decoding
-with selection declared in advance. Even perfect parseability would not by
+and checkpoint rule were frozen before this result. The preregistered
+factorial of §4.4 evaluates the same checkpoints under free generation,
+constrained score decoding, and the expected-score readout, with no selection
+power over the frozen matrix critic. Even perfect parseability would not by
 itself establish calibration, OOD ordering, or policy utility.
 
 Auto-labels inherit threshold and rubric choices, including their
@@ -728,18 +894,17 @@ is a post-selection point estimate; the final paper should add descriptive
 scene-clustered uncertainty over the 108 validation scenes and per-class
 diagnostics without treating them as confirmatory tests.
 
-Video preprocessing introduces an additional confound. Training clips can last
-up to 24 s. The data path first strides them toward 2 fps and then, when more
-than 32 frames remain, samples 32 indices uniformly while retaining the pre-cap
-effective frame rate as metadata. Episode duration can correlate with
-termination and the progress label, and the validation file-path preprocessing
-has not been independently shown to reproduce the same timestamps and metadata.
-We therefore cannot rule out duration-correlated shortcuts or a
-train/validation temporal-metadata mismatch as contributors to r = 0.565.
-Before submission, a release-blocking audit must compare frame indices,
-timestamps, metadata, and resulting tensors across training and inference for
-short, capped, successful, falling, and timeout clips. The current result must
-be revised if that audit finds a semantic mismatch.
+Video preprocessing is a measured confound, not merely a possibility. The
+preregistered E5 interface audit found that the captured SFT, historical
+validation, and policy-scoring paths presented three different temporal
+interfaces, and its companion diagnostic showed the label largely recoverable
+from duration and terminal appearance alone—without showing that the VLM uses
+that shortcut (§4.4;
+`docs/reviews/e5_temporal_interface_amendment_2026-08-11.md`). The historical
+Pearson is therefore a mismatched-interface estimate, and repairing the
+intended critic requires the separately named corrected generation with
+matched temporal routing and endpoint/prefix controls, not a reanalysis or
+replication of the captured recipe.
 
 The force-induced causal-balance experiment is a terminal negative
 feasibility result. After a prospectively frozen amendment increased the cap
@@ -780,8 +945,9 @@ it exists before the realized fall becomes visible.
 ## 7. Conclusion
 
 Do VLMs make good traversal judges? The present answer is conditional. The
-frozen vision tower contains a strong scene-disjoint traversal signal, but the
-registered autoregressive VLM interface does not improve its ranking and makes
+frozen vision tower carries a label-predictive scene-disjoint signal—much of
+it recoverable from terminal appearance alone (§4.4)—but the registered
+autoregressive VLM interface does not improve its ranking and makes
 checkpoint choice depend on output validity. Under visual domain shift, one
 readout preserves the ordinal range and the other preserves the registered
 ordering; neither satisfies both criteria, and the adverse-event-deficient
@@ -850,7 +1016,7 @@ The critic has the most favorable point estimate, but one seed cannot separate
 a reward effect from seed variance or historical checkpoint selection. The
 reference arm's fall rate is not evidence that the labeler lacks fall awareness:
 labeler v3 maps every realized fall to safety 1. Only the registered matrix in
-§4.4 is eligible for the final policy claim.
+§4.5 is eligible for the final policy claim.
 
 ## Appendix B. Labeler-v3 rubric
 
