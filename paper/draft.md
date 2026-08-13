@@ -809,7 +809,18 @@ critic checkpoint quality versus policy gain, λ sensitivity, and scene-matched
 negative OOD examples. The preregistered shortcut battery, decoding-readout
 factorial, and separately named corrected generation of §4.4 do not read or
 depend on the matrix outcome; the on-policy challenge-corpus design is
-described in §6.
+described in §6. One registered negative instrument is already constructed
+and sealed unscored: a synthetic adverse-event corpus
+(`docs/reviews/ood_negative_set_protocol_2026-08-12.md`) of 225
+frame-manipulation clips — freeze, loop, reversal, and speed families built
+deterministically from hash-pinned existing media, each contrasted against a
+re-encoded identity control — whose readouts, pass/fail semantics, and
+per-branch sentences were frozen before construction. Its reversed-fall
+family, in which the terminal frame shows an upright robot while the depicted
+trajectory contains a fall, directly tests at the model level whether a
+readout uses more than the endpoint the battery of §4.4 shows the label
+concentrates in. Scoring runs after matrix closure; no outcome of it can
+select or modify anything in this paper's pipeline.
 
 ---
 
