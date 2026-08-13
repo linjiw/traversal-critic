@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <!-- Fig 1: The World Model as Judge — system architecture.
+       Left: training loop (sim). Right: deployment. The critic exists ONLY on the training side. -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#52514e"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#2a78d6"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#eb6834"/>
+    </marker>
+  </defs>
+
+  <rect width="980" height="560" fill="#fcfcfb"/>
+
+  <!-- ======================= TRAINING SIDE ======================= -->
+  <rect x="20" y="46" width="600" height="492" rx="12" fill="#f4f6fa" stroke="#c3c2b7" stroke-width="1"/>
+  <text x="40" y="76" font-size="17" font-weight="700" fill="#0b0b0b">TRAINING (simulation)</text>
+
+  <!-- Sim env box -->
+  <rect x="40" y="96" width="260" height="150" rx="8" fill="#ffffff" stroke="#2a78d6" stroke-width="1.5"/>
+  <text x="56" y="122" font-size="14" font-weight="700" fill="#0b0b0b">Cluttered scenes + people</text>
+  <text x="56" y="143" font-size="12" fill="#52514e">procedural rooms · 0.6–1.2 m gaps</text>
+  <text x="56" y="161" font-size="12" fill="#52514e">low tables · moving pedestrians</text>
+  <text x="56" y="179" font-size="12" fill="#52514e">visual randomization per scene</text>
+  <text x="56" y="204" font-size="12" font-weight="600" fill="#2a78d6">privileged state (sim-only):</text>
+  <text x="56" y="222" font-size="12" fill="#52514e">clearance · person dist · contacts</text>
+
+  <!-- Policy box (training copy) -->
+  <rect x="40" y="286" width="260" height="108" rx="8" fill="#ffffff" stroke="#1baf7a" stroke-width="1.5"/>
+  <text x="56" y="312" font-size="14" font-weight="700" fill="#0b0b0b">Navigation policy  π</text>
+  <text x="56" y="332" font-size="12" fill="#52514e">CNN+MLP, ~0.5M params · PPO</text>
+  <text x="56" y="350" font-size="12" fill="#52514e">obs: egocentric RGB + goal vec</text>
+  <text x="56" y="368" font-size="12" fill="#52514e">act: heading · speed · mode @ 3 Hz</text>
+
+  <!-- Controller box (training copy) -->
+  <rect x="40" y="424" width="260" height="94" rx="8" fill="#ffffff" stroke="#898781" stroke-width="1.5" stroke-dasharray="none"/>
+  <text x="56" y="450" font-size="14" font-weight="700" fill="#0b0b0b">Whole-body controller  C</text>
+  <text x="56" y="470" font-size="12" fill="#52514e">GEAR-SONIC, FROZEN · 50 Hz</text>
+  <text x="56" y="488" font-size="12" fill="#52514e">walk / crouch / crawl via</text>
+  <text x="56" y="506" font-size="12" fill="#52514e">kinematic planner commands</text>
+
+  <!-- env->policy and policy->controller arrows -->
+  <path d="M 170 246 L 170 286" stroke="#52514e" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="180" y="270" font-size="11" fill="#898781">RGB obs</text>
+  <path d="M 170 394 L 170 424" stroke="#52514e" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="180" y="413" font-size="11" fill="#898781">commands</text>
+
+  <!-- CRITIC box -->
+  <rect x="360" y="96" width="240" height="186" rx="8" fill="#fdf1ea" stroke="#eb6834" stroke-width="2"/>
+  <text x="376" y="124" font-size="15" font-weight="700" fill="#0b0b0b">Traversal critic</text>
+  <text x="376" y="144" font-size="12" fill="#52514e">video world model (2B VLM),</text>
+  <text x="376" y="162" font-size="12" fill="#52514e">SFT'd to score clips 1–5:</text>
+  <text x="376" y="186" font-size="12" fill="#52514e">· collision &amp; contact safety</text>
+  <text x="376" y="204" font-size="12" fill="#52514e">· clearance management</text>
+  <text x="376" y="222" font-size="12" fill="#52514e">· motion quality</text>
+  <text x="376" y="240" font-size="12" fill="#52514e">· social compliance</text>
+  <text x="376" y="266" font-size="12" font-weight="600" fill="#eb6834">async · never blocks RL</text>
+
+  <!-- auto-labeler box -->
+  <rect x="360" y="318" width="240" height="104" rx="8" fill="#ffffff" stroke="#c3c2b7" stroke-width="1.2"/>
+  <text x="376" y="344" font-size="13" font-weight="700" fill="#0b0b0b">Auto-labeler (no humans)</text>
+  <text x="376" y="364" font-size="12" fill="#52514e">privileged state → ordinal 1–5</text>
+  <text x="376" y="382" font-size="12" fill="#52514e">4 axes · safety = hard ceiling</text>
+  <text x="376" y="400" font-size="12" fill="#52514e">trains the critic (SFT data)</text>
+
+  <!-- reward assembly -->
+  <rect x="360" y="452" width="240" height="66" rx="8" fill="#ffffff" stroke="#1baf7a" stroke-width="1.5"/>
+  <text x="376" y="477" font-size="13" font-weight="700" fill="#0b0b0b">Reward</text>
+  <text x="376" y="497" font-size="12" fill="#52514e">R_task + R_safety + λ · critic</text>
+
+  <!-- flows: env clips -> critic ; env priv -> labeler ; labeler -> critic (train); critic -> reward ; reward -> policy -->
+  <path d="M 300 150 C 330 150 330 150 360 150" stroke="#eb6834" stroke-width="1.5" fill="none" marker-end="url(#arrowOrange)"/>
+  <text x="306" y="142" font-size="11" fill="#eb6834">clips</text>
+  <path d="M 300 214 C 336 214 330 356 360 358" stroke="#2a78d6" stroke-width="1.5" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="306" y="240" font-size="11" fill="#2a78d6">privileged</text>
+  <path d="M 480 318 L 480 282" stroke="#52514e" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="488" y="304" font-size="11" fill="#898781">SFT labels</text>
+  <path d="M 480 422 L 480 452" stroke="#52514e" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 600 250 C 640 260 640 470 604 478" stroke="#eb6834" stroke-width="1.5" fill="none" marker-end="url(#arrowOrange)" transform="translate(-2,0)"/>
+  <text x="612" y="368" font-size="11" fill="#eb6834" transform="rotate(90 616 368)">score 1–5</text>
+  <path d="M 360 486 C 330 486 316 400 302 372 L 300 370" stroke="#1baf7a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="308" y="452" font-size="11" fill="#1baf7a">PPO update</text>
+
+  <!-- ======================= DEPLOYMENT SIDE ======================= -->
+  <rect x="660" y="46" width="300" height="492" rx="12" fill="#ffffff" stroke="#c3c2b7" stroke-width="1"/>
+  <text x="680" y="76" font-size="17" font-weight="700" fill="#0b0b0b">DEPLOYMENT (robot)</text>
+
+  <rect x="680" y="130" width="260" height="96" rx="8" fill="#ffffff" stroke="#1baf7a" stroke-width="1.5"/>
+  <text x="696" y="156" font-size="14" font-weight="700" fill="#0b0b0b">Navigation policy  π</text>
+  <text x="696" y="176" font-size="12" fill="#52514e">same ~0.5M-param net</text>
+  <text x="696" y="194" font-size="12" fill="#52514e">onboard camera + goal → 3 Hz</text>
+  <text x="696" y="212" font-size="12" fill="#52514e">runs on onboard compute</text>
+
+  <rect x="680" y="286" width="260" height="96" rx="8" fill="#ffffff" stroke="#898781" stroke-width="1.5"/>
+  <text x="696" y="312" font-size="14" font-weight="700" fill="#0b0b0b">Whole-body controller  C</text>
+  <text x="696" y="332" font-size="12" fill="#52514e">GEAR-SONIC · TensorRT · 50 Hz</text>
+  <text x="696" y="350" font-size="12" fill="#52514e">commands over ZMQ</text>
+  <text x="696" y="368" font-size="12" fill="#52514e">unchanged from training</text>
+
+  <rect x="680" y="442" width="260" height="56" rx="8" fill="#ffffff" stroke="#c3c2b7" stroke-width="1.2"/>
+  <text x="696" y="468" font-size="14" font-weight="700" fill="#0b0b0b">Unitree G1</text>
+  <text x="696" y="486" font-size="12" fill="#52514e">cluttered, occupied home</text>
+
+  <path d="M 810 226 L 810 286" stroke="#52514e" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 810 382 L 810 442" stroke="#52514e" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- The key message strip -->
+  <rect x="660" y="510" width="300" height="0" fill="none"/>
+  <text x="680" y="527" font-size="13" font-weight="700" fill="#eb6834">No world model on the robot.</text>
+
+  <!-- policy transfer arrow across the divide (routed over the top, clear of all boxes) -->
+  <path d="M 300 306 C 344 306 330 62 364 62 L 626 62 C 642 62 646 72 646 92 L 646 158 C 646 172 656 178 668 178 L 680 178" stroke="#1baf7a" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#arrow)"/>
+  <text x="376" y="54" font-size="12" font-weight="600" fill="#1baf7a">deploy trained π — the only artifact that crosses</text>
+
+  <!-- Title -->
+  <text x="20" y="26" font-size="15" font-weight="700" fill="#0b0b0b">Fig. 1 — The world model as judge: the critic shapes training-time reward and never deploys.</text>
+</svg>

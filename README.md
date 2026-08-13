@@ -10,6 +10,8 @@
 
 🌐 **[Project page](https://linjiw.github.io/traversal-critic/)** ·
 📄 **[Current draft](paper/draft.md)** ·
+📦 **[Stage-A artifact release](release/)** — frozen preregistrations & audit
+scripts, published *before* the policy matrix closes ·
 🗄️ **[Historical PDF (Aug 7, pre-v5)](paper/draft.pdf)**
 
 ![system](assets/fig1_system.png)
@@ -25,6 +27,7 @@
 | Policy test | 3 seeds × {hand-crafted, privileged, critic} × 300,032 PPO steps under contact physics — **running; no policy-benefit claim yet** |
 | Interface audit (Aug 11) | **Failed**: SFT, validation, and policy scoring used different temporal interfaces (4 / 4–48 / 5–32 frames); a duration + terminal-frame shortcut reaches r = 0.683 — the in-domain numbers above are historical, and a matched-interface temporal-route × decoding factorial is preregistered |
 | Shortcut battery (Aug 12, preregistered → executed) | The label concentrates at the endpoint: terminal frame alone r = 0.666; first half of each clip only r = 0.44; masking the final 10% of frames drops the best masked readout to 0.574; shuffled-label control 0.010 |
+| External baseline B2 + tower provenance (Aug 12, preregistered → executed) | Zero-training SigLIP2 text-anchor similarity carries no ranking signal (r = −0.14; every clip lands near level 2), while a trained linear readout of the same feature class reaches 0.705. Tower-drift audit: the critic's vision tower is **drifted** from public SigLIP2 (437/437 tensors differ) — the probe reads a privately continued-pretrained representation |
 
 **The diagnosis so far:** the traversal signal survives the frozen vision tower;
 the fine-tuned path loses quality to a combination of the generative digit

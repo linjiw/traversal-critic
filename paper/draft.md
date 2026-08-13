@@ -20,7 +20,7 @@ correlation would tell. In-domain, the only checkpoint with valid outputs on
 all 432 scene-disjoint validation clips reaches Pearson r = 0.565; later
 checkpoints rank better (r = 0.705) but each emits one or two invalid
 generations, exposing a tension between ranking quality and output reliability
-under autoregressive digit decoding. A release-blocking preprocessing audit
+under this model's autoregressive digit decoding. A release-blocking preprocessing audit
 also finds that captured SFT, historical validation, and policy scoring used
 different temporal interfaces, so r = 0.565 is not a clean matched-interface
 estimate. A media-grouped ridge probe on the same
@@ -38,9 +38,10 @@ outside the ordinal range. Because this OOD corpus contains no collision or
 fall examples, neither readout establishes robust transfer or calibration. The
 decisive test—a preregistered three-seed by three-arm PPO comparison of
 hand-crafted, privileged, and VLM-derived shaping under a fixed budget—is
-still in progress, so we make no policy-benefit claim. The current evidence
-supports a controlled privileged-to-visual diagnostic and a label-predictive
-frozen representation—not an advantage for the fine-tuned autoregressive judge.
+still in progress, so we make no policy-benefit claim. The current evidence,
+all of it from a single 2B backbone at one scale, supports a controlled
+privileged-to-visual diagnostic and a label-predictive frozen
+representation—not an advantage for the fine-tuned autoregressive judge.
 
 ---
 
@@ -63,7 +64,8 @@ to the hand-crafted reward—and should be interpreted against direct access to
 the privileged teacher. Validation correlation alone answers none of the last
 two questions.
 
-We conduct these tests for short humanoid-traversal videos. The answer is mixed.
+We conduct these tests for short humanoid-traversal videos, on one system: a
+compact 2B VLM fine-tuned once (§3.2). For that system the answer is mixed.
 The frozen visual representation contains substantial label-predictive signal,
 but the selected autoregressive VLM readout does not outperform a weighted
 linear probe. Later VLM checkpoints rank clips better yet occasionally fail to
@@ -134,8 +136,10 @@ goal-conditioned traversal, not room-scale exploration or general social
 navigation. The clean reproduction uses a third-person chase camera and the
 full SONIC stack under MuJoCo contact physics. The nine-run matrix is still
 training, so historical single-seed and kinematic experiments support no policy
-conclusion. Real-robot dynamics, sensing, and deployment remain future work
-(§6).
+conclusion. Every critic-side finding likewise derives from one backbone at
+one scale (a 2B Cosmos3-Edge) and a single SFT run; §6 states what that
+scoping means for the mechanism claims. Real-robot dynamics, sensing, and
+deployment remain future work (§6).
 
 ---
 
@@ -521,6 +525,30 @@ token-probability readouts outperform generated values for robot rewards
 generative reasoning drives MLLM visual scoring
 ([RALI](https://arxiv.org/abs/2510.11369)) — but it remains untested here.
 
+**External similarity baseline and tower provenance (preregistered, executed
+2026-08-12).** Two cells of the frozen external-baseline protocol
+(`docs/reviews/external_baseline_protocol_2026-08-12.md`) completed before
+matrix closure, CPU-only. First, the *zero-training* similarity cell — the
+RoboCLIP/VLM-RMs-style readout, using the pinned public SigLIP2 checkpoint of
+the Edge tower's class with five frozen rubric-anchor texts over the same
+corrected-route frames — carries essentially no ranking signal: expected-level
+Pearson r = −0.136 (scene-clustered 95% interval [−0.231, −0.033],
+descriptive), with every clip's expected level falling in a 0.2-wide band
+around level 2 and the argmax readout constant. Together with the probe, this
+brackets the similarity family on this task: a *trained* linear readout of
+SigLIP2-class features reaches r = 0.705 while *zero-training* text-anchor
+similarity reaches approximately zero, so the tower's traversal signal is
+linearly accessible but not aligned with rubric text in the public contrastive
+embedding. Second, the tower-drift audit: the Edge vision tower is **not** the
+public SigLIP2 release — all 437 mapped tensors differ (cosine mean 0.905,
+minimum 0.483), i.e., a substantially retrained tower of the same
+architecture. The probe result therefore characterizes a privately
+continued-pretrained representation, and the zero-training cell speaks for the
+tower's architecture class, not for the critic's own weights. The remaining
+external cells are pending: the zero-shot same-backbone judge (B1) runs after
+matrix closure under the frozen contention rules, and the frontier-API judge
+(B3) awaits its finalized amendment.
+
 ### 4.3 Do either readout's criteria survive visual domain shift?
 
 We score **15 clips of real Unitree G1 footage** from the GEAR-SONIC release
@@ -893,6 +921,35 @@ checkpoint selection has been independently replicated. The current C1 result
 is a post-selection point estimate; the final paper should add descriptive
 scene-clustered uncertainty over the 108 validation scenes and per-class
 diagnostics without treating them as confirmatory tests.
+
+Every mechanism finding in this paper is likewise measured on one backbone at
+one scale: Cosmos3-Edge, a Nemotron-2B language model over a SigLIP2 vision
+tower, chosen because the full reproduction—SFT, the asynchronous scorer
+daemon, and PPO training—had to share a single 32 GiB RTX 5090 workstation.
+The parse-eligibility tension (§4.1), the probe-over-critic gap (§4.2), the
+bounded-but-misordered domain-shift behavior (§4.3), and the consequences of
+the three-interface mismatch (§4.4) are therefore claims about this system,
+not about VLM judges in general; with one SFT run and no second backbone, we
+cannot rule out that a larger model or a different vision–language pairing
+would shrink, shift, or reverse any of them. What the study is designed to
+export is the audit methodology rather than its outcomes: the interface
+audit, the shortcut battery, the same-backbone probe-versus-critic
+comparison, and the temporal-route × readout factorial are backbone-agnostic
+instruments that any fine-tuned video judge can be run through, and whether
+they catch the same failures on other backbones is exactly the untested
+question. The one registered instrument with any reach beyond this backbone
+is the tower-drift audit in the external-baseline protocol
+(`docs/reviews/external_baseline_protocol_2026-08-12.md`, B2), which compares
+the Edge vision tower tensor-by-tensor against public SigLIP2 weights of the
+same class. Executed 2026-08-12, it found the tower *drifted* — all 437
+mapped tensors differ from the public release (§4.2) — so the probe result of
+§4.2 characterizes a privately continued-pretrained representation, and even
+the frozen-representation finding does not transfer to publicly available
+weights without retesting. A genuine generality test would require at least
+two additional backbones, differing in vision tower and language-model family
+or scale, carried through this same frozen protocol—data, rubric, split,
+temporal-route materializer, decoding contracts, and audit gates unchanged.
+We name that as future work and do not promise it here.
 
 Video preprocessing is a measured confound, not merely a possibility. The
 preregistered E5 interface audit found that the captured SFT, historical

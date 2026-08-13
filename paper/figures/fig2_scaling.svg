@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 400" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <!-- Fig 2 v2 (post figure-review): CIs added (clip bootstrap 95%), the
+       class-balanced v3 point detached from the scaling line (open square,
+       own legend entry), internal gate lines removed, footnote shortened.
+       Data: near-base 20 clips: r 0.024 [n=140]; v1 460: 0.377 [.224,.520];
+       v2 1530: 0.482 [.403,.554]; v3(balanced) 2930: 0.452 [.386,.511].
+       acc±1: .557 / .679 [.600,.750] / .755 [.715,.794] / .743 [.709,.775]. -->
+  <rect width="920" height="400" fill="#fcfcfb"/>
+  <text x="20" y="28" font-size="15" font-weight="700" fill="#0b0b0b">Fig. 2 — Critic quality vs. training data (scene-level holdout, 95% clip-bootstrap CIs)</text>
+
+  <!-- ============ PANEL A: Pearson ============ -->
+  <g>
+    <text x="70" y="62" font-size="13" font-weight="700" fill="#0b0b0b">Pearson r (critic vs. ground truth)</text>
+    <!-- plot area: x 70..430, y 80..330 ; y-scale 0..0.8 : y = 330 - v/0.8*250 -->
+    <g stroke="#e1e0d9" stroke-width="1">
+      <line x1="70" y1="330" x2="430" y2="330"/>
+      <line x1="70" y1="267.5" x2="430" y2="267.5"/>
+      <line x1="70" y1="205" x2="430" y2="205"/>
+      <line x1="70" y1="142.5" x2="430" y2="142.5"/>
+      <line x1="70" y1="80" x2="430" y2="80"/>
+    </g>
+    <g font-size="11" fill="#898781" text-anchor="end">
+      <text x="64" y="334">0.0</text>
+      <text x="64" y="271.5">0.2</text>
+      <text x="64" y="209">0.4</text>
+      <text x="64" y="146.5">0.6</text>
+      <text x="64" y="84">0.8</text>
+    </g>
+    <!-- x log positions: 20->100, 460->288.6, 1530->360.9, 2930->400 -->
+    <g font-size="11" fill="#898781" text-anchor="middle">
+      <text x="100" y="348">20</text>
+      <text x="288" y="348">460</text>
+      <text x="352" y="348">1,530</text>
+      <text x="404" y="348">2,930</text>
+    </g>
+    <text x="250" y="372" font-size="12" fill="#52514e" text-anchor="middle">training clips (log scale)</text>
+
+    <!-- scaling line: near-base -> v1 -> v2 only -->
+    <path d="M 100 322.5 L 288.6 212.2 L 360.9 179.4" stroke="#2a78d6" stroke-width="2" fill="none"/>
+    <!-- CI whiskers: v1 [.224,.520] -> y 260/167.5 ; v2 [.403,.554] -> y 204/156.9 -->
+    <line x1="288.6" y1="260" x2="288.6" y2="167.5" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="283.6" y1="260" x2="293.6" y2="260" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="283.6" y1="167.5" x2="293.6" y2="167.5" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="360.9" y1="204" x2="360.9" y2="156.9" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="355.9" y1="204" x2="365.9" y2="204" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="355.9" y1="156.9" x2="365.9" y2="156.9" stroke="#2a78d6" stroke-width="1.4"/>
+    <circle cx="100" cy="322.5" r="5" fill="#2a78d6"/>
+    <circle cx="288.6" cy="212.2" r="5" fill="#2a78d6"/>
+    <circle cx="360.9" cy="179.4" r="5" fill="#2a78d6"/>
+    <!-- v3 balanced: detached open square; r=.452 -> y 188.75; CI [.386,.511] -> 209.4/170.3 -->
+    <line x1="400" y1="209.4" x2="400" y2="170.3" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="395" y1="209.4" x2="405" y2="209.4" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="395" y1="170.3" x2="405" y2="170.3" stroke="#eb6834" stroke-width="1.4"/>
+    <rect x="395" y="183.75" width="10" height="10" fill="#fcfcfb" stroke="#eb6834" stroke-width="2"/>
+    <!-- v4 clean camera: filled orange diamond; r=.526 CI [.462,.583], 2410 clips -> x 388 -->
+    <line x1="388" y1="183.4" x2="388" y2="144.4" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="383" y1="183.4" x2="393" y2="183.4" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="383" y1="144.4" x2="393" y2="144.4" stroke="#eb6834" stroke-width="1.4"/>
+    <path d="M 388 156.7 L 394.4 163.1 L 388 169.5 L 381.6 163.1 Z" fill="#eb6834"/>
+    <!-- direct labels -->
+    <g font-size="11.5" font-weight="600" fill="#0b0b0b">
+      <text x="108" y="318">0.02</text>
+      <text x="107" y="325" font-size="10.5" font-weight="400" fill="#898781"><tspan x="108" dy="14">near-base</tspan></text>
+      <text x="244" y="200">0.38</text>
+      <text x="318" y="168">0.48</text>
+      <text x="404" y="212" fill="#eb6834">0.45</text>
+      <text x="342" y="140" fill="#eb6834">0.53</text>
+    </g>
+  </g>
+
+  <!-- ============ PANEL B: acc±1 ============ -->
+  <g>
+    <text x="530" y="62" font-size="13" font-weight="700" fill="#0b0b0b">±1 accuracy (|pred − GT| ≤ 1 on the 1–5 scale)</text>
+    <!-- plot area x 530..890, y 80..330; y 0.4..1.0 : y = 330 - (v-0.4)/0.6*250 -->
+    <g stroke="#e1e0d9" stroke-width="1">
+      <line x1="530" y1="330" x2="890" y2="330"/>
+      <line x1="530" y1="246.7" x2="890" y2="246.7"/>
+      <line x1="530" y1="163.3" x2="890" y2="163.3"/>
+      <line x1="530" y1="80" x2="890" y2="80"/>
+    </g>
+    <g font-size="11" fill="#898781" text-anchor="end">
+      <text x="524" y="334">0.4</text>
+      <text x="524" y="250.7">0.6</text>
+      <text x="524" y="167.3">0.8</text>
+      <text x="524" y="84">1.0</text>
+    </g>
+    <g font-size="11" fill="#898781" text-anchor="middle">
+      <text x="560" y="348">20</text>
+      <text x="748" y="348">460</text>
+      <text x="812" y="348">1,530</text>
+      <text x="864" y="348">2,930</text>
+    </g>
+    <text x="710" y="372" font-size="12" fill="#52514e" text-anchor="middle">training clips (log scale)</text>
+
+    <!-- always-4 floor: acc±1 ≈ 0.61 -> y = 330-(0.61-0.4)/0.6*250 = 242.5 -->
+    <line x1="530" y1="242.5" x2="890" y2="242.5" stroke="#898781" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <text x="534" y="237" font-size="10.5" fill="#898781">constant-4 floor (0.61)</text>
+
+    <!-- line + CIs: .557 -> 264.6 ; .679 [.600,.750] -> 213.75 [246.7,184.2] ; .755 [.715,.794] -> 182.1 [198.75,165.8] -->
+    <path d="M 560 264.6 L 748.6 213.75 L 820.9 182.1" stroke="#2a78d6" stroke-width="2" fill="none"/>
+    <line x1="748.6" y1="246.7" x2="748.6" y2="184.2" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="743.6" y1="246.7" x2="753.6" y2="246.7" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="743.6" y1="184.2" x2="753.6" y2="184.2" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="820.9" y1="198.75" x2="820.9" y2="165.8" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="815.9" y1="198.75" x2="825.9" y2="198.75" stroke="#2a78d6" stroke-width="1.4"/>
+    <line x1="815.9" y1="165.8" x2="825.9" y2="165.8" stroke="#2a78d6" stroke-width="1.4"/>
+    <circle cx="560" cy="264.6" r="5" fill="#2a78d6"/>
+    <circle cx="748.6" cy="213.75" r="5" fill="#2a78d6"/>
+    <circle cx="820.9" cy="182.1" r="5" fill="#2a78d6"/>
+    <!-- v3 balanced open square: .743 [.709,.775] -> 187.1 [201.25,173.75] -->
+    <line x1="860" y1="201.25" x2="860" y2="173.75" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="855" y1="201.25" x2="865" y2="201.25" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="855" y1="173.75" x2="865" y2="173.75" stroke="#eb6834" stroke-width="1.4"/>
+    <rect x="855" y="182.1" width="10" height="10" fill="#fcfcfb" stroke="#eb6834" stroke-width="2"/>
+    <line x1="848" y1="191.7" x2="848" y2="162.1" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="843" y1="191.7" x2="853" y2="191.7" stroke="#eb6834" stroke-width="1.4"/>
+    <line x1="843" y1="162.1" x2="853" y2="162.1" stroke="#eb6834" stroke-width="1.4"/>
+    <path d="M 848 170.3 L 854.4 176.7 L 848 183.1 L 841.6 176.7 Z" fill="#eb6834"/>
+    <g font-size="11.5" font-weight="600" fill="#0b0b0b">
+      <text x="568" y="260">0.56</text>
+      <text x="700" y="204">0.68</text>
+      <text x="778" y="170">0.76</text>
+      <text x="864" y="222" fill="#eb6834">0.74</text>
+      <text x="800" y="150" fill="#eb6834">0.77</text>
+    </g>
+  </g>
+
+  <!-- legend -->
+  <g font-size="11.5">
+    <circle cx="80" cy="391" r="5" fill="#2a78d6"/>
+    <text x="90" y="395" fill="#0b0b0b">critic (scaling series)</text>
+    <rect x="235" y="386" width="10" height="10" fill="#fcfcfb" stroke="#eb6834" stroke-width="2"/>
+    <text x="252" y="395" fill="#0b0b0b">+ class balancing (670-clip val)</text>
+    <path d="M 490 391 L 496.4 397.4 L 490 403.8 L 483.6 397.4 Z" fill="#eb6834" transform="translate(0,-6.4)"/>
+    <text x="504" y="395" fill="#0b0b0b">+ clean camera (best: r=0.534; 590-clip val)</text>
+  </g>
+</svg>

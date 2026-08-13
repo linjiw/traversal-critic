@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 340" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <!-- Fig 4: three-arm comparison, peak checkpoints, 100 held-out episodes each.
+       Per figure-review spec: small multiples (one metric per panel), dot+CI
+       (Wilson 95% for rates), no bars, no dual axes.
+       Data: success .05/.39/.53 -> Wilson 95%: [.02,.11]/[.30,.49]/[.43,.63]
+             collision-ep .95/.89/.88 -> [.89,.98]/[.81,.94]/[.80,.93]
+             labeler score 1.80/2.00/2.22 (1-5 ordinal; bootstrap CI approx ±.15) -->
+  <rect width="960" height="340" fill="#fcfcfb"/>
+  <text x="20" y="28" font-size="15" font-weight="700" fill="#0b0b0b">Fig. 4 — Critic shaping recovers most of the oracle's benefit on held-out scenes</text>
+  <text x="20" y="46" font-size="12" fill="#52514e">peak checkpoints, 100 episodes/arm, identical seeds &amp; scene streams · dots = point estimates, whiskers = 95% CI</text>
+
+  <!-- ===== panel geometry: 3 panels, rows y: baseline 110, critic 170, oracle 230 ===== -->
+  <!-- arm labels (shared, left) -->
+  <g font-size="12.5" text-anchor="end">
+    <text x="128" y="114" fill="#52514e">hand-crafted</text>
+    <text x="128" y="129" fill="#898781" font-size="10.5">baseline</text>
+    <text x="128" y="174" fill="#eb6834" font-weight="700">critic-shaped</text>
+    <text x="128" y="189" fill="#898781" font-size="10.5">pixels only</text>
+    <text x="128" y="234" fill="#2a78d6">oracle</text>
+    <text x="128" y="249" fill="#898781" font-size="10.5">privileged labeler</text>
+  </g>
+
+  <!-- ============ PANEL 1: success rate (0..0.7), x 150..400 ============ -->
+  <g>
+    <text x="150" y="78" font-size="12.5" font-weight="700" fill="#0b0b0b">success rate ↑</text>
+    <g stroke="#e1e0d9" stroke-width="1">
+      <line x1="150" y1="90" x2="150" y2="260"/>
+      <line x1="221.4" y1="90" x2="221.4" y2="260"/>
+      <line x1="292.8" y1="90" x2="292.8" y2="260"/>
+      <line x1="364.2" y1="90" x2="364.2" y2="260"/>
+    </g>
+    <g font-size="10.5" fill="#898781" text-anchor="middle">
+      <text x="150" y="276">0</text><text x="221.4" y="276">0.2</text><text x="292.8" y="276">0.4</text><text x="364.2" y="276">0.6</text>
+    </g>
+    <!-- x = 150 + v/0.7*250 -->
+    <!-- baseline .05 [.02,.11] -->
+    <line x1="157.1" y1="110" x2="189.3" y2="110" stroke="#898781" stroke-width="1.6"/>
+    <circle cx="167.9" cy="110" r="6" fill="#898781"/>
+    <text x="200" y="114" font-size="11.5" font-weight="700" fill="#52514e">0.05</text>
+    <!-- critic .39 [.30,.49] -->
+    <line x1="257.1" y1="170" x2="325" y2="170" stroke="#eb6834" stroke-width="1.6"/>
+    <circle cx="289.3" cy="170" r="6" fill="#eb6834"/>
+    <text x="290" y="160" font-size="11.5" font-weight="700" fill="#eb6834">0.39</text>
+    <!-- oracle .53 [.43,.63] -->
+    <line x1="303.6" y1="230" x2="375" y2="230" stroke="#2a78d6" stroke-width="1.6"/>
+    <circle cx="339.3" cy="230" r="6" fill="#2a78d6"/>
+    <text x="340" y="220" font-size="11.5" font-weight="700" fill="#2a78d6">0.53</text>
+    <!-- delta annotation -->
+    <line x1="167.9" y1="296" x2="339.3" y2="296" stroke="#c3c2b7" stroke-width="1" marker-end="none"/>
+    <text x="253" y="311" font-size="10.5" fill="#52514e" text-anchor="middle">critic recovers 0.34 of the 0.48 oracle gain (71%)</text>
+  </g>
+
+  <!-- ============ PANEL 2: collision-episode rate (0.7..1.0), x 430..650 ============ -->
+  <g>
+    <text x="430" y="78" font-size="12.5" font-weight="700" fill="#0b0b0b">collision-episode rate ↓</text>
+    <g stroke="#e1e0d9" stroke-width="1">
+      <line x1="430" y1="90" x2="430" y2="260"/>
+      <line x1="503.3" y1="90" x2="503.3" y2="260"/>
+      <line x1="576.7" y1="90" x2="576.7" y2="260"/>
+      <line x1="650" y1="90" x2="650" y2="260"/>
+    </g>
+    <g font-size="10.5" fill="#898781" text-anchor="middle">
+      <text x="430" y="276">0.7</text><text x="503.3" y="276">0.8</text><text x="576.7" y="276">0.9</text><text x="650" y="276">1.0</text>
+    </g>
+    <!-- x = 430 + (v-0.7)/0.3*220 -->
+    <!-- baseline .95 [.89,.98] -->
+    <line x1="569.3" y1="110" x2="635.3" y2="110" stroke="#898781" stroke-width="1.6"/>
+    <circle cx="613.3" cy="110" r="6" fill="#898781"/>
+    <text x="600" y="99" font-size="11.5" font-weight="700" fill="#52514e">0.95</text>
+    <!-- critic .89 [.81,.94] -->
+    <line x1="510.7" y1="170" x2="606.3" y2="170" stroke="#eb6834" stroke-width="1.6"/>
+    <circle cx="569.3" cy="170" r="6" fill="#eb6834"/>
+    <text x="556" y="159" font-size="11.5" font-weight="700" fill="#eb6834">0.89</text>
+    <!-- oracle .88 [.80,.93] -->
+    <line x1="503.3" y1="230" x2="599" y2="230" stroke="#2a78d6" stroke-width="1.6"/>
+    <circle cx="562" cy="230" r="6" fill="#2a78d6"/>
+    <text x="549" y="219" font-size="11.5" font-weight="700" fill="#2a78d6">0.88</text>
+  </g>
+
+  <!-- ============ PANEL 3: auto-labeler score (1.5..2.5), x 690..940 ============ -->
+  <g>
+    <text x="690" y="78" font-size="12.5" font-weight="700" fill="#0b0b0b">auto-labeler score (1–5) ↑</text>
+    <g stroke="#e1e0d9" stroke-width="1">
+      <line x1="690" y1="90" x2="690" y2="260"/>
+      <line x1="815" y1="90" x2="815" y2="260"/>
+      <line x1="940" y1="90" x2="940" y2="260"/>
+    </g>
+    <g font-size="10.5" fill="#898781" text-anchor="middle">
+      <text x="690" y="276">1.5</text><text x="815" y="276">2.0</text><text x="940" y="276">2.5</text>
+    </g>
+    <!-- x = 690 + (v-1.5)/1.0*250 ; CIs ~±0.13 bootstrap -->
+    <!-- baseline 1.80 -->
+    <line x1="732.5" y1="110" x2="797.5" y2="110" stroke="#898781" stroke-width="1.6"/>
+    <circle cx="765" cy="110" r="6" fill="#898781"/>
+    <text x="752" y="99" font-size="11.5" font-weight="700" fill="#52514e">1.80</text>
+    <!-- critic 2.00 -->
+    <line x1="782.5" y1="170" x2="847.5" y2="170" stroke="#eb6834" stroke-width="1.6"/>
+    <circle cx="815" cy="170" r="6" fill="#eb6834"/>
+    <text x="802" y="159" font-size="11.5" font-weight="700" fill="#eb6834">2.00</text>
+    <!-- oracle 2.22 -->
+    <line x1="837.5" y1="230" x2="902.5" y2="230" stroke="#2a78d6" stroke-width="1.6"/>
+    <circle cx="870" cy="230" r="6" fill="#2a78d6"/>
+    <text x="857" y="219" font-size="11.5" font-weight="700" fill="#2a78d6">2.22</text>
+  </g>
+</svg>

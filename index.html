@@ -95,6 +95,7 @@ a { color: var(--accent); }
     <div class="statusline">⏳ Status (Aug 2026): 3-seed × 3-arm contact-physics PPO matrix running — the policy verdict is preregistered and pending. No policy-benefit claim is made yet.</div>
     <div class="badges">
       <a class="badge primary" href="https://github.com/linjiw/traversal-critic/blob/main/paper/draft.md">📄 Current draft</a>
+      <a class="badge" href="https://github.com/linjiw/traversal-critic/tree/main/release">📦 Stage-A release (pre-closure preregistrations)</a>
       <a class="badge" href="paper/draft.pdf">🗄️ PDF (Aug 7, pre-v5)</a>
       <a class="badge" href="#findings">📈 Findings so far</a>
       <a class="badge" href="#progress">🧪 Progress</a>
@@ -206,7 +207,7 @@ a { color: var(--accent); }
         </ul>
       </div>
     </div>
-    <p class="lead" style="margin-top:18px"><b>The diagnosis (evolving):</b> the traversal signal survives the frozen vision tower; the fine-tuned path loses quality to a <i>combination</i> of the generative digit interface and — as a release-blocking preprocessing audit found on Aug 11 — a mismatched temporal input path (the fine-tuned model effectively saw four frames per clip). A preregistered 17-row shortcut battery (executed Aug 12) has now bounded the label side: rubric labels concentrate at the endpoint (terminal frame alone r = 0.666; duration + terminal r = 0.683) while the first half of each clip recovers only r = 0.44, and masking the final 10% of frames drops the best masked readout to 0.574 (shuffled-label control 0.01). The probe's 0.705 therefore exceeds a low-resolution endpoint readout by only ~0.04 — so the remaining question, under the preregistered temporal-route × decoding factorial and the corrected-generation critic, is whether any <i>model</i> readout uses more than the endpoint. The controls keep catching exactly the things headline correlations hide; that is the point of the study.</p>
+    <p class="lead" style="margin-top:18px"><b>The diagnosis (evolving):</b> the traversal signal survives the frozen vision tower; the fine-tuned path loses quality to a <i>combination</i> of the generative digit interface and — as a release-blocking preprocessing audit found on Aug 11 — a mismatched temporal input path (the fine-tuned model effectively saw four frames per clip). A preregistered 17-row shortcut battery (executed Aug 12) has now bounded the label side: rubric labels concentrate at the endpoint (terminal frame alone r = 0.666; duration + terminal r = 0.683) while the first half of each clip recovers only r = 0.44, and masking the final 10% of frames drops the best masked readout to 0.574 (shuffled-label control 0.01). The probe's 0.705 therefore exceeds a low-resolution endpoint readout by only ~0.04 — so the remaining question, under the preregistered temporal-route × decoding factorial and the corrected-generation critic, is whether any <i>model</i> readout uses more than the endpoint. Two more preregistered cells executed Aug 12: zero-training SigLIP2 text-anchor similarity carries no ranking signal at all (r = −0.14), and a tensor-level audit found the critic's vision tower <i>drifted</i> from the public SigLIP2 release (437/437 tensors) — the traversal signal is reachable by a trained linear readout of a privately continued-pretrained tower, not by off-the-shelf similarity. The controls keep catching exactly the things headline correlations hide; that is the point of the study.</p>
 
     <div class="numbers">
       <div class="stat"><div class="big">2,000 <span class="accent">/ 500</span></div><div class="lbl">Audited contact-physics rollouts / procedural scenes, labeled by the deterministic four-axis rubric; scene-hash 1,568/432 train/validation split; zero human annotations.</div></div>
@@ -258,7 +259,7 @@ a { color: var(--accent); }
 
 <footer>
   <div class="wrap">
-    Built on <a href="https://github.com/nvidia-cosmos/cosmos-framework">Cosmos3</a> (video-language model) and <a href="https://github.com/NVlabs/GR00T-WholeBodyControl">GEAR-SONIC</a> (whole-body control). Real-robot footage is from the GEAR-SONIC release media. Site updated Aug 11, 2026.
+    Built on <a href="https://github.com/nvidia-cosmos/cosmos-framework">Cosmos3</a> (video-language model) and <a href="https://github.com/NVlabs/GR00T-WholeBodyControl">GEAR-SONIC</a> (whole-body control). Real-robot footage is from the GEAR-SONIC release media. Site updated Aug 13, 2026.
   </div>
 </footer>
 

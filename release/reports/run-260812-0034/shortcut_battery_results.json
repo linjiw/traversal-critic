@@ -1,0 +1,1147 @@
+{
+  "_meta": {
+    "labeler_version": 3,
+    "dynamics": "physics",
+    "scene_range": [
+      1000,
+      1499
+    ],
+    "data_root": "<DATA>/traversal-critic/data/critic_v5",
+    "protocol_authority": {
+      "path": "<REPO>/traversal-critic-research/docs/reviews/shortcut_battery_extension_protocol_2026-08-11.md",
+      "bytes": 9740,
+      "sha256": "4a34c6c9e3ce38f6808fa5dc77d582b3bb35ab8f9dc2f15310c4c90d9de873dd"
+    },
+    "source": {
+      "path": "<REPO>/traversal-critic-research/scripts/run_shortcut_battery_extension.py",
+      "bytes": 39876,
+      "sha256": "f552faea2d8eef9100f07852b1470766c5c3eb5f6e69c54202afba1720004950"
+    },
+    "pilot_source_module": {
+      "path": "<REPO>/traversal-critic-research/scripts/evaluate_temporal_shortcuts.py",
+      "bytes": 16234,
+      "sha256": "0e7f422c5a3829fd543c2ffe2a3a8a92a1c161df7df2456361e319060957a79e"
+    },
+    "dataset_audit": {
+      "path": "<DATA>/traversal-critic/data/critic_v5_dataset_audit.json",
+      "bytes": 2250,
+      "sha256": "837cd7a408b90b0a72ecb29a672d9623f3d6d760edf8ad93d3b634acc8c1956d"
+    },
+    "critic_selection": {
+      "path": "<DATA>/traversal-critic/data/critic_v5_selected.json",
+      "bytes": 10636,
+      "sha256": "ae5911cd1dd581a5d6ec30c63709c5b14eee414919b6484eb9abb50df66ca2e6"
+    },
+    "pilot_results": {
+      "path": "<REPO>/traversal-critic-research/autoresearch/run-260811-1753/temporal_shortcut_results.json",
+      "bytes": 9668,
+      "sha256": "02aa81fd26857744b47e49c769e256354909d27e8d380f1ab29b34073f893ca2"
+    },
+    "pilot_feature_cache": {
+      "path": "<REPO>/traversal-critic-research/autoresearch/run-260811-1753/temporal_shortcut_features.npz",
+      "bytes": 493507,
+      "sha256": "f8a9b5f81c94bca5bd240e0af8a31cf6692aab8808fcd36bb83f7636144fb852"
+    },
+    "battery_feature_cache": {
+      "path": "<REPO>/traversal-critic-research/autoresearch/run-260812-0034/shortcut_battery_features.npz",
+      "sha256": "ab62f3e19ab1b8078b0b8d1f3a0fa11d49f9b8daa97139a6133214e611191afe"
+    },
+    "seed_index_artifact": {
+      "path": "<REPO>/traversal-critic-research/autoresearch/run-260812-0034/shortcut_battery_seed_index_artifact.npz",
+      "sha256": "1bc39839f8514d0817487ae9b589a0debf879150f4c18f7daf5a163eff416f43"
+    },
+    "media_fingerprints": {
+      "train": "77fa2c4a4eb9544159a41f457b8b07a8b18c92f1933bab5fd2a8ac49bfbbb698",
+      "val": "eaa47ef334a285bcc379dc396bdc1f8ace4c7c319337a7c3670f4686b102bba4"
+    },
+    "master_seed": 20260811,
+    "cpu_only": true,
+    "pilot_cache_cross_check": {
+      "terminal_feature_max_abs_diff": 0.0,
+      "duration_max_abs_diff": 0.0
+    },
+    "implementation_notes": [
+      "Protocol total says '17 rows (rows 1-11, four order-shuffled companions, one shuffled-label control)'; that enumeration counts 16 computed rows, so the reprinted post-hoc pilot is reported as row 17, reconciling the stated total.",
+      "Pixel scaling: thumbnails divided by 255 exactly as in the pilot; fold-local standardization makes this affine scaling mathematically irrelevant to ridge.",
+      "Lambda tie-break (unspecified by protocol): maximum pooled OOF Pearson, smallest lambda on ties - inherited from the pilot; no tie occurred.",
+      "Row 7 random draws: random.Random(20260811), one randrange(N) per clip in dataset order (train rows 1..1568 then val rows 1..432).",
+      "Rows 12-15 permutations: per clip, random.Random(int.from_bytes(sha256(f'{20260811}|{clip_id}').digest()[:8],'big')).shuffle over slot indices; clip_id is the media path relative to the data root; rows 12/13 share the 2-slot permutation, rows 14/15 share the 4-slot permutation (permutation depends only on master seed, clip ID, and slot count).",
+      "Row 16 label permutation: random.Random(20260811).shuffle over train indices (the pilot used numpy default_rng(20260811); the protocol specifies only 'the master seed').",
+      "Bootstrap: 10,000 draws of 108 scene indices with replacement via random.Random(20260811).randrange(108), scenes ordered by sorted unique val scene ID; draw matrix saved to the seed/index artifact before any interval was computed; intervals are 2.5/97.5 percentiles (numpy linear interpolation), labeled descriptive.",
+      "Rounding for 'rounded Pearson' uses numpy round (half-to-even) then clip to [1,5], as in the pilot; prefix indices use Python round - exact .5 cases cannot occur for j*(m-1)/3 (fractional parts are thirds), verified by test.",
+      "Frames are decoded at native resolution/fps with torchcodec exact-index access over the source order 0..N-1 (N = decoder.metadata.num_frames), identical to the pilot's frame basis; all features used for fitting were freshly decoded in this run and the terminal/duration columns were cross-checked against the verified pilot cache."
+    ]
+  },
+  "protocol": {
+    "authority": "docs/reviews/shortcut_battery_extension_protocol_2026-08-11.md",
+    "status": "prospectively frozen 2026-08-11; executed 2026-08-12",
+    "estimator": "ridge with fold-local standardization and unpenalized intercept",
+    "lambda_grid": [
+      0.0001,
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "fold_rule": "392 sorted train scene IDs shuffled once with random.Random(20260811), dealt round-robin into 5 folds",
+    "selection": "train-only pooled out-of-fold Pearson; refit on all 1,568; single validation pass",
+    "references": {
+      "selected_v5_critic_pearson": 0.5646,
+      "selected_v5_critic_label": "mismatched-interface historical record (E5 audit)",
+      "frozen_tower_probe_pearson": 0.7053
+    },
+    "interval_label": "descriptive (validation set participated in the historical checkpoint sweep)"
+  },
+  "fingerprint_replay": {
+    "expected": {
+      "train": "77fa2c4a4eb9544159a41f457b8b07a8b18c92f1933bab5fd2a8ac49bfbbb698",
+      "val": "eaa47ef334a285bcc379dc396bdc1f8ace4c7c319337a7c3670f4686b102bba4"
+    },
+    "computed": {
+      "train": "77fa2c4a4eb9544159a41f457b8b07a8b18c92f1933bab5fd2a8ac49bfbbb698",
+      "val": "eaa47ef334a285bcc379dc396bdc1f8ace4c7c319337a7c3670f4686b102bba4"
+    },
+    "match": true
+  },
+  "data": {
+    "n_train": 1568,
+    "n_train_scenes": 392,
+    "n_val": 432,
+    "n_val_scenes": 108,
+    "train_duration_s": {
+      "min": 1.32,
+      "max": 24.0
+    },
+    "val_duration_s": {
+      "min": 2.28,
+      "max": 24.0
+    },
+    "frame_count_range": [
+      33,
+      600
+    ]
+  },
+  "sanity_gate": {
+    "row5_recomputed_pearson": 0.6827086890665492,
+    "row5_pilot_pearson": 0.6827086890665492,
+    "row5_abs_difference": 0.0,
+    "row5_tolerance": 0.02,
+    "row5_pass": true,
+    "shuffled_label_pearson": 0.009764117106130328,
+    "shuffled_label_max": 0.15,
+    "shuffled_label_pass": true
+  },
+  "rows": {
+    "duration_only": {
+      "row_number": 1,
+      "description": "four duration features",
+      "n_features": 4,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.24391647838241323,
+          "0.001": 0.2439193242588759,
+          "0.01": 0.24393048178062834,
+          "0.1": 0.24322830176838123,
+          "1.0": 0.23838322719945554,
+          "10.0": 0.23230355711586434,
+          "100.0": 0.21062563870141393
+        },
+        "selected_lambda": 0.01,
+        "oof_pearson_at_selected_lambda": 0.24393048178062834
+      },
+      "validation": {
+        "pearson_continuous": 0.26866967221096844,
+        "spearman_continuous": 0.42931540943496177,
+        "mae_continuous": 0.8366333740231205,
+        "macro_mae_continuous": 1.4116253628661048,
+        "per_class_mae_continuous": {
+          "1": 0.7075174747590304,
+          "2": 0.25943024500509093,
+          "3": 0.8545604756553589,
+          "4": 2.1125415427691303,
+          "5": 3.124077076141914
+        },
+        "pearson_rounded_clipped": 0.27578924039813885,
+        "accuracy_rounded_clipped": 0.42592592592592593,
+        "within_one_rounded_clipped": 0.8541666666666666,
+        "prediction_min": 0.8007974888859934,
+        "prediction_max": 2.3029677557383295
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.47585843466342265,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.3809296359151686
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.17762047099061712,
+          "ci95_high": 0.3562093381771955,
+          "bootstrap_mean": 0.269566442750183,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.31373363444056424,
+          "ci95_high": 0.5368329757137618,
+          "bootstrap_mean": 0.4285893904769001,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.21717623045373338,
+          "ci95_high": 0.3324928027707837,
+          "bootstrap_mean": 0.27537568665338946,
+          "n_draws": 10000
+        }
+      }
+    },
+    "first_frame_only": {
+      "row_number": 2,
+      "description": "frame 0 (192 dims)",
+      "n_features": 192,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.12762289179174416,
+          "0.001": 0.12765434612343055,
+          "0.01": 0.12795485575747018,
+          "0.1": 0.13007413856175526,
+          "1.0": 0.13569568326316045,
+          "10.0": 0.13339728003433038,
+          "100.0": 0.1320092288688252
+        },
+        "selected_lambda": 1.0,
+        "oof_pearson_at_selected_lambda": 0.13569568326316045
+      },
+      "validation": {
+        "pearson_continuous": 0.1480158375348591,
+        "spearman_continuous": 0.13419833038392207,
+        "mae_continuous": 0.9363594231594237,
+        "macro_mae_continuous": 1.418404572213338,
+        "per_class_mae_continuous": {
+          "1": 0.8784646552573226,
+          "2": 0.3884890039745042,
+          "3": 0.8527772608585726,
+          "4": 1.958854022374334,
+          "5": 3.013437918601957
+        },
+        "pearson_rounded_clipped": 0.1023521436750506,
+        "accuracy_rounded_clipped": 0.37037037037037035,
+        "within_one_rounded_clipped": 0.8240740740740741,
+        "prediction_min": -0.009575667885628691,
+        "prediction_max": 3.3231027758959923
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.26216053406811746,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.20986223952198937
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.037378463496511805,
+          "ci95_high": 0.2565537161519669,
+          "bootstrap_mean": 0.14830728691888517,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.021687670873593492,
+          "ci95_high": 0.24437428111850815,
+          "bootstrap_mean": 0.13334955633592735,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.0022992159298440037,
+          "ci95_high": 0.19900400106480515,
+          "bootstrap_mean": 0.10251668301039704,
+          "n_draws": 10000
+        }
+      }
+    },
+    "terminal_frame_only": {
+      "row_number": 3,
+      "description": "frame N-1 (192 dims); recomputes pilot",
+      "n_features": 192,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.6004459517846646,
+          "0.001": 0.6004793084884431,
+          "0.01": 0.6007978958387082,
+          "0.1": 0.6030620447678525,
+          "1.0": 0.610843208947603,
+          "10.0": 0.6246894223821796,
+          "100.0": 0.6358057229564945
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.6358057229564945
+      },
+      "validation": {
+        "pearson_continuous": 0.6660558297888135,
+        "spearman_continuous": 0.7002770648311056,
+        "mae_continuous": 0.6910746796064302,
+        "macro_mae_continuous": 0.9833351533297933,
+        "per_class_mae_continuous": {
+          "1": 0.5894422076754268,
+          "2": 0.47936488557926576,
+          "3": 0.5954480026055095,
+          "4": 1.1498622956712405,
+          "5": 2.102558375117524
+        },
+        "pearson_rounded_clipped": 0.6521894177641605,
+        "accuracy_rounded_clipped": 0.4837962962962963,
+        "within_one_rounded_clipped": 0.9074074074074074,
+        "prediction_min": -0.21700637211856155,
+        "prediction_max": 3.7778035095652447
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.1796950580744128,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.9443581877056763
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.60485680930264,
+          "ci95_high": 0.7223201167208967,
+          "bootstrap_mean": 0.6662480477974082,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.62494585795359,
+          "ci95_high": 0.7598717287768604,
+          "bootstrap_mean": 0.698966585548087,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.5896153542663243,
+          "ci95_high": 0.7073320993130012,
+          "bootstrap_mean": 0.6519008050453039,
+          "n_draws": 10000
+        }
+      }
+    },
+    "first_plus_terminal": {
+      "row_number": 4,
+      "description": "frames 0 and N-1 (384 dims)",
+      "n_features": 384,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.5207818902084412,
+          "0.001": 0.5208793566681768,
+          "0.01": 0.5218177365971978,
+          "0.1": 0.5288978484212552,
+          "1.0": 0.5533710497491247,
+          "10.0": 0.5870966665018333,
+          "100.0": 0.6106345983645783
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.6106345983645783
+      },
+      "validation": {
+        "pearson_continuous": 0.6496336601045579,
+        "spearman_continuous": 0.6665260585430279,
+        "mae_continuous": 0.6987950537686971,
+        "macro_mae_continuous": 0.9785179419734906,
+        "per_class_mae_continuous": {
+          "1": 0.5999915492636152,
+          "2": 0.5008583336837982,
+          "3": 0.5596005437394416,
+          "4": 1.1423278329412465,
+          "5": 2.089811450239352
+        },
+        "pearson_rounded_clipped": 0.6307870889807998,
+        "accuracy_rounded_clipped": 0.48148148148148145,
+        "within_one_rounded_clipped": 0.9027777777777778,
+        "prediction_min": -0.37363600161787525,
+        "prediction_max": 4.005424349830709
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.150608678895781,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.9210742380611908
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.5784838597799815,
+          "ci95_high": 0.7133280376126114,
+          "bootstrap_mean": 0.6498268011555006,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.5819693363673848,
+          "ci95_high": 0.7369048149246447,
+          "bootstrap_mean": 0.6654033880957786,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.5634358574790446,
+          "ci95_high": 0.6901781903119508,
+          "bootstrap_mean": 0.6308746624559731,
+          "n_draws": 10000
+        }
+      }
+    },
+    "duration_plus_terminal": {
+      "row_number": 5,
+      "description": "duration features plus frame N-1; recomputes pilot",
+      "n_features": 196,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.6368725743780427,
+          "0.001": 0.63690858424047,
+          "0.01": 0.6372463924437106,
+          "0.1": 0.6393766544678459,
+          "1.0": 0.6459000513388834,
+          "10.0": 0.6583030626093369,
+          "100.0": 0.666249378950677
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.666249378950677
+      },
+      "validation": {
+        "pearson_continuous": 0.6827086890665492,
+        "spearman_continuous": 0.7819726152137803,
+        "mae_continuous": 0.6551171925748908,
+        "macro_mae_continuous": 0.9941473168592208,
+        "per_class_mae_continuous": {
+          "1": 0.4913255074218415,
+          "2": 0.47523736863028154,
+          "3": 0.5585208668184046,
+          "4": 1.2055601421678692,
+          "5": 2.240092699257707
+        },
+        "pearson_rounded_clipped": 0.6664512579856496,
+        "accuracy_rounded_clipped": 0.5069444444444444,
+        "within_one_rounded_clipped": 0.9120370370370371,
+        "prediction_min": -0.26689558364498667,
+        "prediction_max": 3.9484968198179793
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.2091900266853512,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.9679692174486731
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.6349499414038972,
+          "ci95_high": 0.7299801331241261,
+          "bootstrap_mean": 0.6837065453821236,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.7326102642251272,
+          "ci95_high": 0.8204677864565318,
+          "bootstrap_mean": 0.7804372680986935,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.6148057871781896,
+          "ci95_high": 0.7148473264389775,
+          "bootstrap_mean": 0.6667866941609325,
+          "n_draws": 10000
+        }
+      }
+    },
+    "duration_first_terminal": {
+      "row_number": 6,
+      "description": "duration + first + terminal (388 dims)",
+      "n_features": 388,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.5544425186798629,
+          "0.001": 0.5545526960539304,
+          "0.01": 0.5556088956394108,
+          "0.1": 0.5633756852725065,
+          "1.0": 0.5890974918197343,
+          "10.0": 0.6229991507424693,
+          "100.0": 0.6448978460824039
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.6448978460824039
+      },
+      "validation": {
+        "pearson_continuous": 0.6736878121926727,
+        "spearman_continuous": 0.7540474755237098,
+        "mae_continuous": 0.6571996470668616,
+        "macro_mae_continuous": 0.9862075313684631,
+        "per_class_mae_continuous": {
+          "1": 0.5002550122976948,
+          "2": 0.4804256446157754,
+          "3": 0.5519405342633165,
+          "4": 1.1906085481511914,
+          "5": 2.207807917514337
+        },
+        "pearson_rounded_clipped": 0.662529228616621,
+        "accuracy_rounded_clipped": 0.5370370370370371,
+        "within_one_rounded_clipped": 0.9074074074074074,
+        "prediction_min": -0.14051886331104946,
+        "prediction_max": 4.169936780680594
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.1932125614464626,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.9551790900222212
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.615948194517105,
+          "ci95_high": 0.726465996752314,
+          "bootstrap_mean": 0.6745880517717311,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.6934565475907656,
+          "ci95_high": 0.8036881295020576,
+          "bootstrap_mean": 0.7528212546353882,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.5970640612209422,
+          "ci95_high": 0.7203360227853834,
+          "bootstrap_mean": 0.6628729783333246,
+          "n_draws": 10000
+        }
+      }
+    },
+    "random_single_frame": {
+      "row_number": 7,
+      "description": "one uniform master-seed frame per clip (192 dims)",
+      "n_features": 192,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.3076668766563064,
+          "0.001": 0.30769511935706373,
+          "0.01": 0.30796893241970424,
+          "0.1": 0.31012299367113433,
+          "1.0": 0.31928866858821914,
+          "10.0": 0.33834775519426746,
+          "100.0": 0.3595857422450526
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.3595857422450526
+      },
+      "validation": {
+        "pearson_continuous": 0.37194409698196856,
+        "spearman_continuous": 0.37755932489520405,
+        "mae_continuous": 0.8488868987740906,
+        "macro_mae_continuous": 1.2502423986046918,
+        "per_class_mae_continuous": {
+          "1": 0.8623006356813109,
+          "2": 0.303146738502886,
+          "3": 0.7144320832203868,
+          "4": 1.7123255074815866,
+          "5": 2.659007028137288
+        },
+        "pearson_rounded_clipped": 0.3219873824941111,
+        "accuracy_rounded_clipped": 0.39351851851851855,
+        "within_one_rounded_clipped": 0.8657407407407407,
+        "prediction_min": 0.24975765310489595,
+        "prediction_max": 3.172520365679973
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.658774525295729,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.5273558726527273
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.27194733235030727,
+          "ci95_high": 0.4612767106082671,
+          "bootstrap_mean": 0.37015622930419534,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.2654527891549561,
+          "ci95_high": 0.47604782741877655,
+          "bootstrap_mean": 0.37526907333944093,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.21263858240474523,
+          "ci95_high": 0.4199312475097582,
+          "bootstrap_mean": 0.3194842331961445,
+          "n_draws": 10000
+        }
+      }
+    },
+    "onset_prefix_25": {
+      "row_number": 8,
+      "description": "K=4 frames in first 25% of decoded frames (768 dims)",
+      "n_features": 768,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.11557388636825643,
+          "0.001": 0.11571935053084494,
+          "0.01": 0.1170554696387986,
+          "0.1": 0.12523914221868396,
+          "1.0": 0.15534975057527922,
+          "10.0": 0.22063280876731323,
+          "100.0": 0.2920507508603397
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.2920507508603397
+      },
+      "validation": {
+        "pearson_continuous": 0.32588316308604043,
+        "spearman_continuous": 0.3253229021423355,
+        "mae_continuous": 0.8858120285476786,
+        "macro_mae_continuous": 1.2579506276805401,
+        "per_class_mae_continuous": {
+          "1": 0.8736915241642045,
+          "2": 0.4268465518238222,
+          "3": 0.72571888287401,
+          "4": 1.6142030828022176,
+          "5": 2.6492930967384454
+        },
+        "pearson_rounded_clipped": 0.25749088256216174,
+        "accuracy_rounded_clipped": 0.39351851851851855,
+        "within_one_rounded_clipped": 0.8125,
+        "prediction_min": 0.21962915385504167,
+        "prediction_max": 3.369216940877156
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.5771929916507977,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.46204900480085126
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.22404165215244087,
+          "ci95_high": 0.4243727670501775,
+          "bootstrap_mean": 0.32617537495347654,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.21266235168035713,
+          "ci95_high": 0.43141634074927293,
+          "bootstrap_mean": 0.32492144718503624,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.15310833058309328,
+          "ci95_high": 0.36273616188576085,
+          "bootstrap_mean": 0.25812603944886175,
+          "n_draws": 10000
+        }
+      }
+    },
+    "onset_prefix_50": {
+      "row_number": 9,
+      "description": "K=4 frames in first 50% of decoded frames (768 dims)",
+      "n_features": 768,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.18333129180339547,
+          "0.001": 0.18365907717243152,
+          "0.01": 0.18671651340299136,
+          "0.1": 0.20636428257573652,
+          "1.0": 0.25818993855606326,
+          "10.0": 0.31153564514285076,
+          "100.0": 0.3486957227476869
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.3486957227476869
+      },
+      "validation": {
+        "pearson_continuous": 0.44008226848834125,
+        "spearman_continuous": 0.4494319742495085,
+        "mae_continuous": 0.847484358062441,
+        "macro_mae_continuous": 1.1828154172274707,
+        "per_class_mae_continuous": {
+          "1": 0.8075540854025803,
+          "2": 0.4740451225943463,
+          "3": 0.7550591570698341,
+          "4": 1.5047238186506307,
+          "5": 2.372694902419962
+        },
+        "pearson_rounded_clipped": 0.41197651208050956,
+        "accuracy_rounded_clipped": 0.38425925925925924,
+        "within_one_rounded_clipped": 0.8587962962962963,
+        "prediction_min": 0.20079609367785634,
+        "prediction_max": 3.677209266926992
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.7794584989166512,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.6239646511957199
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.33480894972073977,
+          "ci95_high": 0.5350000962601887,
+          "bootstrap_mean": 0.4395913168069186,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.3408083488985283,
+          "ci95_high": 0.5470056117772156,
+          "bootstrap_mean": 0.44821527511220877,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.3067741515033068,
+          "ci95_high": 0.5101096949474081,
+          "bootstrap_mean": 0.41121438832645846,
+          "n_draws": 10000
+        }
+      }
+    },
+    "endpoint_masked_last_10": {
+      "row_number": 10,
+      "description": "terminal frame at N-1-k, k=max(1,ceil(0.10N)) (192 dims)",
+      "n_features": 192,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.5228945958166373,
+          "0.001": 0.5229307940132117,
+          "0.01": 0.5232713476400026,
+          "0.1": 0.525472990617235,
+          "1.0": 0.5314861000033628,
+          "10.0": 0.5434095593474874,
+          "100.0": 0.5519719432801888
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.5519719432801888
+      },
+      "validation": {
+        "pearson_continuous": 0.5737154280565948,
+        "spearman_continuous": 0.5954248717043997,
+        "mae_continuous": 0.7524361586530398,
+        "macro_mae_continuous": 1.0906077418634812,
+        "per_class_mae_continuous": {
+          "1": 0.7058558266202211,
+          "2": 0.39400224234611564,
+          "3": 0.6582650111218464,
+          "4": 1.3385490522187504,
+          "5": 2.3563665770104727
+        },
+        "pearson_rounded_clipped": 0.500933974262941,
+        "accuracy_rounded_clipped": 0.4375,
+        "within_one_rounded_clipped": 0.8703703703703703,
+        "prediction_min": 0.006775821855606656,
+        "prediction_max": 3.5219866432826805
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.0161449310247872,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.8134346066306463
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.4954364101259635,
+          "ci95_high": 0.6440926150605075,
+          "bootstrap_mean": 0.5738610688468844,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.5053099743563773,
+          "ci95_high": 0.6739227665475297,
+          "bootstrap_mean": 0.5949999620113677,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.39910723141604815,
+          "ci95_high": 0.5909959625086473,
+          "bootstrap_mean": 0.5001354016305916,
+          "n_draws": 10000
+        }
+      }
+    },
+    "endpoint_masked_last_25": {
+      "row_number": 11,
+      "description": "terminal frame at N-1-k, k=max(1,ceil(0.25N)) (192 dims)",
+      "n_features": 192,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.4450897258406732,
+          "0.001": 0.44512084813486097,
+          "0.01": 0.4454233408795578,
+          "0.1": 0.44783337608602636,
+          "1.0": 0.4576403123272329,
+          "10.0": 0.47578698117159485,
+          "100.0": 0.49492216034360353
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.49492216034360353
+      },
+      "validation": {
+        "pearson_continuous": 0.4915090224285815,
+        "spearman_continuous": 0.5510930671006231,
+        "mae_continuous": 0.7961752988615424,
+        "macro_mae_continuous": 1.1745276075111504,
+        "per_class_mae_continuous": {
+          "1": 0.7255690794747738,
+          "2": 0.4116300591516632,
+          "3": 0.6566104103227859,
+          "4": 1.5692436019177425,
+          "5": 2.5095848866887867
+        },
+        "pearson_rounded_clipped": 0.45004085322784015,
+        "accuracy_rounded_clipped": 0.44212962962962965,
+        "within_one_rounded_clipped": 0.8634259259259259,
+        "prediction_min": -0.4707262640089671,
+        "prediction_max": 3.1746495448782333
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.8705437875107714,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.6968793739239777
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.42124537346437685,
+          "ci95_high": 0.5597070453822204,
+          "bootstrap_mean": 0.4916897556749909,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.4659408464437717,
+          "ci95_high": 0.628773430402575,
+          "bootstrap_mean": 0.5499326281045273,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.3490777996748998,
+          "ci95_high": 0.5422838749013486,
+          "bootstrap_mean": 0.44847464029299056,
+          "n_draws": 10000
+        }
+      }
+    },
+    "shuffled_order_first_plus_terminal": {
+      "row_number": 12,
+      "description": "row 4 with per-clip slot permutation",
+      "n_features": 384,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.4980591248405765,
+          "0.001": 0.4980983827640385,
+          "0.01": 0.49847444680706066,
+          "0.1": 0.5013868828139297,
+          "1.0": 0.5166037894083678,
+          "10.0": 0.5505029294133553,
+          "100.0": 0.5804834777931506
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.5804834777931506
+      },
+      "validation": {
+        "pearson_continuous": 0.6414949329528596,
+        "spearman_continuous": 0.6750738281067197,
+        "mae_continuous": 0.7158952326461646,
+        "macro_mae_continuous": 0.9956823772301963,
+        "per_class_mae_continuous": {
+          "1": 0.648145254981478,
+          "2": 0.4621140484433419,
+          "3": 0.5237322451147085,
+          "4": 1.2704783235205444,
+          "5": 2.073942014090909
+        },
+        "pearson_rounded_clipped": 0.5956455003771087,
+        "accuracy_rounded_clipped": 0.4537037037037037,
+        "within_one_rounded_clipped": 0.8958333333333334,
+        "prediction_min": -0.2841678868331563,
+        "prediction_max": 4.080183629517608
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.1361936467461204,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.9095348546049336
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.58306844777243,
+          "ci95_high": 0.6940715003923984,
+          "bootstrap_mean": 0.6412962793024145,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.6002962661433455,
+          "ci95_high": 0.7350860487042203,
+          "bootstrap_mean": 0.6734603782030083,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.5280634540779092,
+          "ci95_high": 0.6564266482756889,
+          "bootstrap_mean": 0.5951837449365455,
+          "n_draws": 10000
+        }
+      }
+    },
+    "shuffled_order_duration_first_terminal": {
+      "row_number": 13,
+      "description": "row 6 with per-clip frame-slot permutation (duration block fixed)",
+      "n_features": 388,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.5385701594491712,
+          "0.001": 0.5386133094783221,
+          "0.01": 0.5390226633612748,
+          "0.1": 0.5420087119031672,
+          "1.0": 0.5561939930597262,
+          "10.0": 0.5860632144574193,
+          "100.0": 0.610920539525323
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.610920539525323
+      },
+      "validation": {
+        "pearson_continuous": 0.657522349697145,
+        "spearman_continuous": 0.7512654865759912,
+        "mae_continuous": 0.6855409226318316,
+        "macro_mae_continuous": 1.0146161230446509,
+        "per_class_mae_continuous": {
+          "1": 0.5521240644330325,
+          "2": 0.46421281990196395,
+          "3": 0.524735210779498,
+          "4": 1.3310541038235355,
+          "5": 2.2009544162852244
+        },
+        "pearson_rounded_clipped": 0.6101195937539176,
+        "accuracy_rounded_clipped": 0.4791666666666667,
+        "within_one_rounded_clipped": 0.9027777777777778,
+        "prediction_min": -0.2574901485208869,
+        "prediction_max": 4.204001918481196
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 1.1645808531653294,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.9322591091693534
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.613604688304987,
+          "ci95_high": 0.6999358768105394,
+          "bootstrap_mean": 0.6581187873483967,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.7011108743759541,
+          "ci95_high": 0.7907964482596221,
+          "bootstrap_mean": 0.7496296434471825,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.556385137290399,
+          "ci95_high": 0.660818576398061,
+          "bootstrap_mean": 0.6102287804041143,
+          "n_draws": 10000
+        }
+      }
+    },
+    "shuffled_order_onset_prefix_25": {
+      "row_number": 14,
+      "description": "row 8 with per-clip slot permutation",
+      "n_features": 768,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.11973305149937373,
+          "0.001": 0.11992498869453003,
+          "0.01": 0.12175590696803945,
+          "0.1": 0.13477029716815866,
+          "1.0": 0.17364805489229965,
+          "10.0": 0.22273703317722957,
+          "100.0": 0.2584973924056738
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.2584973924056738
+      },
+      "validation": {
+        "pearson_continuous": 0.23742868788456672,
+        "spearman_continuous": 0.2324156107348751,
+        "mae_continuous": 0.9426695951865783,
+        "macro_mae_continuous": 1.3349902328824146,
+        "per_class_mae_continuous": {
+          "1": 0.930968129692336,
+          "2": 0.4460994277616591,
+          "3": 0.8030386734693561,
+          "4": 1.793097138180149,
+          "5": 2.701747795308572
+        },
+        "pearson_rounded_clipped": 0.2203017298712929,
+        "accuracy_rounded_clipped": 0.3402777777777778,
+        "within_one_rounded_clipped": 0.8148148148148148,
+        "prediction_min": -0.16841635660974608,
+        "prediction_max": 3.317774609777297
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.4205254833237101,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.3366350317376531
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.14191367849197942,
+          "ci95_high": 0.3281345974253549,
+          "bootstrap_mean": 0.2370225764439002,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.1277672012360739,
+          "ci95_high": 0.3339927982705492,
+          "bootstrap_mean": 0.23214160010199145,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.12750718522283253,
+          "ci95_high": 0.3100944472996024,
+          "bootstrap_mean": 0.21983531800495593,
+          "n_draws": 10000
+        }
+      }
+    },
+    "shuffled_order_onset_prefix_50": {
+      "row_number": 15,
+      "description": "row 9 with per-clip slot permutation",
+      "n_features": 768,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.1789107076975996,
+          "0.001": 0.17894982104250762,
+          "0.01": 0.17933122261049128,
+          "0.1": 0.1827240884617184,
+          "1.0": 0.20464269165476007,
+          "10.0": 0.2617617763159492,
+          "100.0": 0.3175124911973117
+        },
+        "selected_lambda": 100.0,
+        "oof_pearson_at_selected_lambda": 0.3175124911973117
+      },
+      "validation": {
+        "pearson_continuous": 0.3216614310726828,
+        "spearman_continuous": 0.34443989967990024,
+        "mae_continuous": 0.9364272594959041,
+        "macro_mae_continuous": 1.2539152426057112,
+        "per_class_mae_continuous": {
+          "1": 0.9344541131832802,
+          "2": 0.5405976973515576,
+          "3": 0.7626841214145204,
+          "4": 1.5048876356662868,
+          "5": 2.526952645412911
+        },
+        "pearson_rounded_clipped": 0.32063487822112036,
+        "accuracy_rounded_clipped": 0.3125,
+        "within_one_rounded_clipped": 0.8425925925925926,
+        "prediction_min": -0.0099693240910681,
+        "prediction_max": 4.230883283988832
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.5697156058673093,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.45606327955860315
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": 0.21642284807040862,
+          "ci95_high": 0.4210585081235156,
+          "bootstrap_mean": 0.3208549886203261,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": 0.238926809482786,
+          "ci95_high": 0.441799540729584,
+          "bootstrap_mean": 0.3425697471953203,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": 0.22053941732773774,
+          "ci95_high": 0.4182852599559005,
+          "bootstrap_mean": 0.31986666367960215,
+          "n_draws": 10000
+        }
+      }
+    },
+    "shuffled_label_control": {
+      "row_number": 16,
+      "description": "row-6 features, train labels permuted once with master seed; negative control",
+      "n_features": 388,
+      "selection": {
+        "rule": "maximum pooled scene-grouped five-fold train OOF Pearson; smallest lambda breaks ties",
+        "cv_pearson": {
+          "0.0001": 0.03681912160943531,
+          "0.001": 0.03681379927718705,
+          "0.01": 0.03675760306587836,
+          "0.1": 0.03610427564287395,
+          "1.0": 0.03215144376120445,
+          "10.0": 0.023886445495323726,
+          "100.0": 0.01316040304728362
+        },
+        "selected_lambda": 0.0001,
+        "oof_pearson_at_selected_lambda": 0.03681912160943531
+      },
+      "validation": {
+        "pearson_continuous": 0.009764117106130328,
+        "spearman_continuous": 0.01002534211259339,
+        "mae_continuous": 1.0704156725034655,
+        "macro_mae_continuous": 1.5272438069984378,
+        "per_class_mae_continuous": {
+          "1": 1.0222570719415611,
+          "2": 0.5487110837556339,
+          "3": 0.9986506637616785,
+          "4": 1.9687345380395567,
+          "5": 3.097865677493759
+        },
+        "pearson_rounded_clipped": -0.004504573352399281,
+        "accuracy_rounded_clipped": 0.3449074074074074,
+        "within_one_rounded_clipped": 0.7523148148148148,
+        "prediction_min": -0.726360995693921,
+        "prediction_max": 4.1089796677131165
+      },
+      "descriptive_ratios": {
+        "pearson_fraction_of_selected_critic_0.5646_mismatched_interface_historical_record": 0.017293866642101183,
+        "pearson_fraction_of_frozen_tower_probe_0.7053": 0.013843920468070788
+      },
+      "bootstrap_ci95_descriptive": {
+        "pearson_continuous": {
+          "ci95_low": -0.09903217877915628,
+          "ci95_high": 0.12096889019199616,
+          "bootstrap_mean": 0.010146199694323153,
+          "n_draws": 10000
+        },
+        "spearman_continuous": {
+          "ci95_low": -0.10426395987121197,
+          "ci95_high": 0.12517872811971445,
+          "bootstrap_mean": 0.01052320609047897,
+          "n_draws": 10000
+        },
+        "pearson_rounded_clipped": {
+          "ci95_low": -0.1251766142199019,
+          "ci95_high": 0.11943935516215816,
+          "bootstrap_mean": -0.0033809838427718004,
+          "n_draws": 10000
+        }
+      }
+    }
+  },
+  "post_hoc_pilot": {
+    "row_number": 17,
+    "status": "post-hoc pilot",
+    "note": "Values reprinted from autoresearch/run-260811-1753/temporal_shortcut_results.json (post-hoc descriptive pilot per protocol; not confirmatory; fold rule differs from this battery: pilot shuffled scenes with numpy default_rng(0)).",
+    "duration_only": {
+      "pearson_continuous": 0.2680968606581925,
+      "spearman_continuous": 0.4397477066389849,
+      "pearson_rounded_clipped": 0.27578924039813885,
+      "selected_lambda": 0.1,
+      "oof_pearson_at_selected_lambda": 0.23647978795515825
+    },
+    "terminal_frame_only": {
+      "pearson_continuous": 0.6660558297888135,
+      "spearman_continuous": 0.7002770648311056,
+      "pearson_rounded_clipped": 0.6521894177641605,
+      "selected_lambda": 100.0,
+      "oof_pearson_at_selected_lambda": 0.6359200423972832
+    },
+    "duration_plus_terminal_frame": {
+      "pearson_continuous": 0.6827086890665492,
+      "spearman_continuous": 0.7819726152137803,
+      "pearson_rounded_clipped": 0.6664512579856496,
+      "selected_lambda": 100.0,
+      "oof_pearson_at_selected_lambda": 0.6673976533569012
+    },
+    "fixed_seed_permuted_training_labels": {
+      "pearson_continuous": 0.04021419825845259,
+      "spearman_continuous": 0.07557499914767994,
+      "pearson_rounded_clipped": 0.04599787351641904,
+      "selected_lambda": 10.0,
+      "oof_pearson_at_selected_lambda": 0.02766849738080392
+    }
+  }
+}
